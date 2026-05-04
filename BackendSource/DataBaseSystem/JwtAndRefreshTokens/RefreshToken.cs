@@ -1,4 +1,7 @@
-﻿namespace BackendSource.DataBaseSystem.JwtAndRefreshTokens
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace BackendSource.DataBaseSystem.JwtAndRefreshTokens
 {
     [Table("refreshTable")]
     public class RefreshToken

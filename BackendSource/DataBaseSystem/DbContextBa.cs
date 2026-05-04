@@ -15,6 +15,9 @@ namespace BackendSource.DataBaseSystem
         public DbSet<PermissionsTable> PermissionsTables { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        public DbSet<GamesTable> Games { get; set; }
+        public DbSet<GameVersionTable> GameVersions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

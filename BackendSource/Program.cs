@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics.Eventing.Reader;
 using System.Security.Claims;
 using System.Text;
 
@@ -106,8 +107,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
 
-
+if (args.Contains("-createEverything"))
+{
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<DbContextBa>();
     try
@@ -118,7 +121,25 @@ if (app.Environment.IsDevelopment())
     {
         Console.WriteLine(ex.ToString());
     }
+
+
+    var path = Path.GetFullPath("GameFiles");
+
+    if (!Directory.Exists(path))
+    {
+        Directory.CreateDirectory(path);
+    }
+
+    Console.WriteLine($"Ruta completa: {path}");
+
+    var dirs = Directory.GetDirectories(path);
+    foreach (var dir in dirs)
+    {
+        Console.WriteLine(dir);
+    }
 }
+
+
 
 app.UseHttpsRedirection();
 
