@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BackendSource.DataBaseSystem
+namespace BackendSource.DataBaseSystem.GamesAndCodes
 {
     [Table("LicencesTable")]
     public class LicencesTable

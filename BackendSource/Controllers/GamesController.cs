@@ -1,6 +1,7 @@
 ﻿using BackendSource.DataBaseSystem;
 using BackendSource.DTOs;
 using BackendSource.PermissionSystem;
+using BackendSource.Services.APIServices;
 using BackendSource.Systems;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -13,11 +14,11 @@ namespace BackendSource.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class GamesController(GamesSystem games) : Controller
+    public class GamesController(IGameService games, IKeyService keyService) : Controller
     {
-        private readonly GamesSystem _games = games;
+        private readonly IGameService _games = games;
+        private readonly IKeyService _keyService = keyService;
 
-        [Authorize(Policy = PolicyNames.Tester)]
         [HttpGet("/games/{id}/latest/download")]
         public async Task<IActionResult> DownloadLatest(Guid id)
         {
@@ -42,6 +43,8 @@ namespace BackendSource.Controllers
 
             return Ok(game);
         } 
+
+
 
 
     }

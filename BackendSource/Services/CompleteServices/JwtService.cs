@@ -1,4 +1,5 @@
 ﻿using BackendSource.DataBaseSystem;
+using BackendSource.PermissionSystem;
 using BackendSource.Services.APIServices;
 using BackendSource.Services.task;
 using Microsoft.IdentityModel.Tokens;
@@ -16,15 +17,23 @@ namespace BackendSource.Services.CompleteServices
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.RoleName)
+                new Claim(ClaimTypes.Role, user.Role.RoleName),
+                new Claim(JwtRegisteredClaimNames.Iat,
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                    ClaimValueTypes.Integer64)
             };
 
-            foreach (var permission in user.Role.RolePermissions)
+            if (user.Role != null)
             {
-                claims.Add(new Claim("permission", permission.Permission.Name));
+                claims.Add(new Claim(ClaimTypes.Role, user.Role.RoleName));
+
+                foreach (var permission in user.Role.RolePermissions)
+                {
+                    claims.Add(new Claim(CustomClaims.Permission, permission.Permission.Name));
+                }
             }
 
             var key = new SymmetricSecurityKey(
@@ -32,8 +41,11 @@ namespace BackendSource.Services.CompleteServices
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var expires = DateTime.UtcNow.AddMinutes(
-                double.Parse(_configuration["Jwt:ExpiresInMinutes"] ?? "60"));
+            double expiresMinutes = 60;
+            if (!double.TryParse(_configuration["Jwt:ExpiresInMinutes"], out expiresMinutes))
+                expiresMinutes = 60;
+
+            var expires = DateTime.UtcNow.AddMinutes(expiresMinutes);
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],

@@ -33,7 +33,11 @@ namespace BackendSource.Controllers
                 return BadRequest("Something is wrong");
             }
 
-            return Ok($"Welcome {result.User.UserName}");
+            return Ok(new
+            {
+                accessToken = result.AccessToken,
+                refreshToken = result.RefreshToken,
+            });
         }
 
         [Authorize]

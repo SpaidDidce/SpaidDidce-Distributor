@@ -1,7 +1,6 @@
-﻿using BackendSource.DataBaseSystem.GamesAndCodes;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace BackendSource.DataBaseSystem
+namespace BackendSource.DataBaseSystem.GamesAndCodes
 {
     public class GameVersionTable
     {

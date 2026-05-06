@@ -9,10 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BackendSource.Services.CompleteServices
 {
-    public class AuthService(DbContextBa contextBa, IPasswordHasher<UserTable> passHasher) : IAuthService
+    public class AuthService(DbContextBa contextBa, IPasswordHasher<UserTable> passHasher, IJwtService jwtService) : IAuthService
     {
         private readonly DbContextBa _contextBa = contextBa;
         private readonly IPasswordHasher<UserTable> _passHasher = passHasher;
+        private readonly IJwtService _jwtService = jwtService;
 
         public async Task<LoginServiceTask> Login(LoginDto dto)
         {
@@ -31,7 +32,9 @@ namespace BackendSource.Services.CompleteServices
             if (result == PasswordVerificationResult.Failed)
                 return LoginServiceTask.OnFailed();
 
-            return LoginServiceTask.OnSuccess(user);
+            var jwt = _jwtService.GenerateAccessToken(user);
+
+            return LoginServiceTask.OnSuccess(jwt.Token, string.Empty);
         }
 
         public async Task<RefreshToken> Logout(string refreshToken)
