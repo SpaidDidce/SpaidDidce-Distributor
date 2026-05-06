@@ -1,5 +1,7 @@
 ﻿using BackendSource.DataBaseSystem;
+using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DTOs;
+using BackendSource.Services.APIServices;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Semver;
@@ -7,7 +9,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace BackendSource.Systems
 {
-    public class GamesSystem(DbContextBa context) 
+    public class GamesSystem(DbContextBa context) : IGameService
     {
         private readonly DbContextBa _context = context;
 

@@ -1,4 +1,5 @@
-﻿using BackendSource.DataBaseSystem.JwtAndRefreshTokens;
+﻿using BackendSource.DataBaseSystem.GamesAndCodes;
+using BackendSource.DataBaseSystem.JwtAndRefreshTokens;
 using BackendSource.DataBaseSystem.Roles_Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,8 +16,12 @@ namespace BackendSource.DataBaseSystem
         public DbSet<PermissionsTable> PermissionsTables { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        // Games
         public DbSet<GamesTable> Games { get; set; }
         public DbSet<GameVersionTable> GameVersions { get; set; }
+        public DbSet<LicencesTable> Licences { get; set; }
+        public DbSet<GamesKeys> GamesKeys { get; set; }
+        // Games
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

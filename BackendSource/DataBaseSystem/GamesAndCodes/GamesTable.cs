@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BackendSource.DataBaseSystem
+namespace BackendSource.DataBaseSystem.GamesAndCodes
 {
     public class GamesTable
     {
@@ -8,6 +8,7 @@ namespace BackendSource.DataBaseSystem
         public Guid GameId { get; set; }
         public string GameName { get; set; } = string.Empty;
         public string GameDescription { get; set; } = string.Empty;
+        public string ExeName { get; set; } = string.Empty;
         public List<GameVersionTable> GameVersions { get; set; } = new();
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BackendSource.DataBaseSystem.GamesAndCodes;
+using System.ComponentModel.DataAnnotations;
 
 namespace BackendSource.DataBaseSystem
 {

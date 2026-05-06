@@ -1,5 +1,8 @@
 using BackendSource.DataBaseSystem;
 using BackendSource.PermissionSystem;
+using BackendSource.Services.APIServices;
+using BackendSource.Services.CompleteServices;
+using BackendSource.Systems;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +21,12 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
+
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IGameService, GamesSystem>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IKeyService, KeyService>();
 
 var dbSettings = builder.Configuration
     .GetSection("DatabaseSettings")

@@ -15,7 +15,6 @@ namespace BackendSource.Controllers
     [Route("[controller]")]
     public class GamesController(GamesSystem games) : Controller
     {
-
         private readonly GamesSystem _games = games;
 
         [Authorize(Policy = PolicyNames.Tester)]
@@ -42,7 +41,7 @@ namespace BackendSource.Controllers
                 return NotFound();
 
             return Ok(game);
-        }
+        } 
 
 
     }

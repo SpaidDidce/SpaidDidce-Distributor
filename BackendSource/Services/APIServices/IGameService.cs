@@ -1,0 +1,19 @@
+﻿using BackendSource.DataBaseSystem;
+using BackendSource.DataBaseSystem.GamesAndCodes;
+using BackendSource.DTOs;
+using Microsoft.EntityFrameworkCore;
+
+namespace BackendSource.Services.APIServices
+{
+    public interface IGameService
+    {
+        public Task<GamesTable?> GetGameFromId(Guid gameId);
+        public Task<GamesTable?> GetGameFromName(string gameName);
+
+        public Task<GamesTable> createNewGame(CreateNewGameDto dto);
+        public Task<GamesTable?> updateGame(newVersionDto dto);
+        public Task<bool> getNewUpdate(string VersionInPc, Guid gameId);
+        public Task<GameVersionTable?> GetLatestVersion(Guid id);
+        public Task<string> GetLastVersionDesc(Guid GameId);
+    }
+}
