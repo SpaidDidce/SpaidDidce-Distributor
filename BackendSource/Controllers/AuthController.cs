@@ -1,4 +1,5 @@
-﻿using BackendSource.Services.CompleteServices;
+using BackendSource.Services.APIServices;
+using BackendSource.Services.CompleteServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,9 +7,9 @@ namespace BackendSource.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class AuthController(AuthService authService) : Controller
+    public class AuthController(IAuthService authService) : Controller
     {
-        private readonly AuthService _authService = authService;
+        private readonly IAuthService _authService = authService;
 
 
         [HttpPost("register")]
@@ -20,8 +21,11 @@ namespace BackendSource.Controllers
                 return BadRequest(result.ErrorMessage);
             }
 
-
-            return Ok("Welcome New user");
+            return Ok(new
+            {
+                accessToken = result.AccessToken,
+                refreshToken = result.RefreshToken,
+            });
         }
 
         [HttpPost("login")]

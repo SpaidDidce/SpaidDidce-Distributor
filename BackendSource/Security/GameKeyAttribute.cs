@@ -1,46 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BackendSource.Security
 {
-    public class GameKeyAttribute : Attribute, IAsyncActionFilter
+    public class GameKeyAttribute : TypeFilterAttribute
     {
-        private const string UserKey = "X-Api-Key";
-
-        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+        /// <summary>
+        /// Initializes a new instance of the GameKeyAttribute.
+        /// </summary>
+        /// <param name="idParameterName">The name of the action parameter that contains the game ID. Defaults to "id".</param>
+        public GameKeyAttribute(string idParameterName = "id") : base(typeof(GameKeyFilter))
         {
-            /*
-            var request = context.HttpContext.Request;
-
-            if (!request.Headers.TryGetValue(ApiKeyHeader, out var extractedApiKey) ||
-                !request.Headers.TryGetValue(ServerIdHeader, out var extractedServerId))
-            {
-                context.Result = new ContentResult()
-                {
-                    StatusCode = 401,
-                    Content = "Faltan encabezados de autenticación"
-                };
-                return;
-            }
-
-            var db = context.HttpContext.RequestServices.GetRequiredService<DDbContext>();
-
-            var server = await db.Servers
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.ServerId == extractedServerId.ToString()
-                                       && s.ApiKey == extractedApiKey.ToString());
-
-            if (server == null)
-            {
-                context.Result = new UnauthorizedResult();
-                return;
-            }
-
-            context.HttpContext.Items["CurrentServer"] = server;
-
-            await next();
-            */
+            Arguments = new object[] { idParameterName };
         }
     }
 }

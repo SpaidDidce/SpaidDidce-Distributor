@@ -1,10 +1,12 @@
 using BackendSource.DataBaseSystem;
 using BackendSource.PermissionSystem;
+using BackendSource.seeder;
 using BackendSource.Services.APIServices;
 using BackendSource.Services.CompleteServices;
 using BackendSource.Systems;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.Eventing.Reader;
@@ -23,6 +25,8 @@ builder.Services.AddOpenApi();
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
 
+builder.Services.AddScoped<IPasswordHasher<UserTable>, PasswordHasher<UserTable>>();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGameService, GamesSystem>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -37,15 +41,14 @@ if (dbSettings == null)
 
 
 var connectionString =
-    $"Server={dbSettings.Server};" +
+    $"Host={dbSettings.Server};" +
     $"Port={dbSettings.Port};" +
     $"Database={dbSettings.Database};" +
-    $"User={dbSettings.User};" +
+    $"Username={dbSettings.User};" +
     $"Password={dbSettings.Password};";
 
-builder.Services.AddDbContext<DbContextBa>(options => options.UseMySql(
-    connectionString,
-    new MySqlServerVersion(new Version(8, 0, 0))
+builder.Services.AddDbContext<DbContextBa>(options => options.UseNpgsql(
+    connectionString
 ));
 
 builder.Services.AddAuthentication(options =>
@@ -130,6 +133,10 @@ if (args.Contains("-createEverything"))
     {
         Console.WriteLine(ex.ToString());
     }
+
+    var context = scope.ServiceProvider.GetRequiredService<DbContextBa>();
+    await PermissionSeeder.seedAsync(context);
+    await RoleSeeder.SeedAsync(context);
 
 
     var path = Path.GetFullPath("GameFiles");

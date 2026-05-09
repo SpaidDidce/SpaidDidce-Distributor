@@ -1,4 +1,4 @@
-﻿namespace BackendSource.DTOs
+﻿namespace BackendSource.DTOs.GamesDtos
 {
     public class newVersionDto
     {

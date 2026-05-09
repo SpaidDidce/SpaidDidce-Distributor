@@ -1,5 +1,5 @@
 ﻿using BackendSource.DataBaseSystem.GamesAndCodes;
-using BackendSource.DTOs;
+using BackendSource.DTOs.GamesDtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace BackendSource.Services.APIServices
@@ -14,5 +14,6 @@ namespace BackendSource.Services.APIServices
         public Task<bool> getNewUpdate(string VersionInPc, Guid gameId);
         public Task<GameVersionTable?> GetLatestVersion(Guid id);
         public Task<string> GetLastVersionDesc(Guid GameId);
+        public Task<List<GamesTable>> GetAllPublicGames();
     }
 }

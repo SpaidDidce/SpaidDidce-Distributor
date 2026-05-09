@@ -78,10 +78,11 @@ namespace BackendSource.Services.CompleteServices
                 HashedPassword = _passHasher.HashPassword(null!, dto.Password)
             };
 
+
             _contextBa.Users.Add(newUser);
             await _contextBa.SaveChangesAsync();
-
-            return RegisterServiceTask.OnSuccess(newUser);
+            var jwt = _jwtService.GenerateAccessToken(newUser);
+            return RegisterServiceTask.OnSuccess(newUser, jwt.Token, string.Empty);
         }
     }
 }

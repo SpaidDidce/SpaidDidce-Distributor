@@ -1,14 +1,7 @@
-﻿using BackendSource.DataBaseSystem;
-using BackendSource.DTOs;
-using BackendSource.PermissionSystem;
+﻿using BackendSource.Security;
 using BackendSource.Services.APIServices;
-using BackendSource.Systems;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Semver;
-using System.Runtime.Intrinsics.X86;
 
 namespace BackendSource.Controllers
 {
@@ -19,6 +12,8 @@ namespace BackendSource.Controllers
         private readonly IGameService _games = games;
         private readonly IKeyService _keyService = keyService;
 
+        [Authorize]
+        [GameKey]
         [HttpGet("/games/{id}/latest/download")]
         public async Task<IActionResult> DownloadLatest(Guid id)
         {
@@ -27,13 +22,15 @@ namespace BackendSource.Controllers
             if (game == null)
                 return NotFound();
 
-            var path = Path.Combine("GameFiles", game.FileName);
+            var path = Path.Combine($"GameFiles/{game.GameId}", game.FileName);
 
             var stream = System.IO.File.OpenRead(path);
 
-            return File(stream, "application/zip", game.FileName);
+            return PhysicalFile(path, "application/zip", game.FileName);
         }
 
+        [Authorize]
+        [GameKey]
         [HttpGet("/games/{id}/latest/description")]
         public async Task<IActionResult> Description(Guid id)
         {
@@ -42,10 +39,28 @@ namespace BackendSource.Controllers
                 return NotFound();
 
             return Ok(game);
-        } 
+        }
 
+        [Authorize]
+        [HttpGet("/games")]
+        public async Task<IActionResult> GetGames()
+        {
+            var games = await _games.GetAllPublicGames();
+            if (games == null)
+                return NotFound();
 
+            return Ok(games);
+        }
 
+        [Authorize]
+        [HttpPost("/games/searchbyname")]
+        public async Task<IActionResult> searchbyname([FromBody] DTOs.GamesDtos.SearchGameDto dto)
+        {
+            var games = await _games.GetGameFromName(dto.gameName);
+            if (games == null)
+                return NotFound();
 
+            return Ok(games);
+        }
     }
 }

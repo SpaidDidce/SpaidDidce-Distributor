@@ -1,6 +1,6 @@
 ﻿using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
-using BackendSource.DTOs;
+using BackendSource.DTOs.GamesDtos;
 using BackendSource.Services.APIServices;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,14 +16,12 @@ namespace BackendSource.Systems
         public async Task<GamesTable?> GetGameFromId(Guid gameId)
         {
             var game = await _context.Games.FirstOrDefaultAsync(p=> p.GameId == gameId);
-
             return game;
         }
 
         public async Task<GamesTable?> GetGameFromName(string gameName)
         {
-            var game = await _context.Games.FirstOrDefaultAsync(p=> p.GameName == gameName);
-
+            var game = await _context.Games.FirstOrDefaultAsync(p=> p.GameName == gameName && p.GameIsPublic);
             return game;
         }
 
@@ -44,6 +42,14 @@ namespace BackendSource.Systems
                 hashFromVersion = dto.sha256,
                 Game = NewGame
             };
+
+
+            var path = Path.GetFullPath($"GameFiles/{NewGame.GameId}");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
 
             _context.Games.Add(NewGame);
             _context.GameVersions.Add(NewGameVersion);
@@ -66,7 +72,6 @@ namespace BackendSource.Systems
             });
 
             await _context.SaveChangesAsync();
-
             return game;
         }
 
@@ -77,7 +82,7 @@ namespace BackendSource.Systems
 
             var latest = await _context.GameVersions
                 .Where(p => p.GameId == gameId)
-                .OrderByDescending(p => p.CreatedAt)
+                .OrderByDescending(v => SemVersion.Parse(v.Version))
                 .FirstOrDefaultAsync();
 
             if (latest == null)
@@ -110,6 +115,15 @@ namespace BackendSource.Systems
             }
 
             return latest.UpdateDesc;
+        }
+
+        public async Task<List<GamesTable>> GetAllPublicGames()
+        {
+            var allGamePublic = await _context.Games
+                .Where(p => p.GameIsPublic)
+                .ToListAsync();
+
+            return allGamePublic;
         }
     }
 }

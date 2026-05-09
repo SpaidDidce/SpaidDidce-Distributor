@@ -47,6 +47,10 @@ namespace BackendSource.DataBaseSystem
                 .HasOne(rp => rp.Permission)
                 .WithMany(p => p.RolePermissions)
                 .HasForeignKey(rp => rp.PermissionId);
+
+            modelBuilder.Entity<LicencesTable>()
+                .HasIndex(x => new { x.GameId, x.PlayerId })
+                .IsUnique();
         }
     }
 }
