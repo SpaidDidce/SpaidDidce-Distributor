@@ -1,5 +1,6 @@
 ﻿using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DataBaseSystem.JwtAndRefreshTokens;
+using BackendSource.DataBaseSystem.Programers;
 using BackendSource.DataBaseSystem.Roles_Permissions;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,9 @@ namespace BackendSource.DataBaseSystem
         public DbSet<LicencesTable> Licences { get; set; }
         public DbSet<GamesKeys> GamesKeys { get; set; }
         // Games
+
+        // Developer
+        public DbSet<TeamProgramingDatabse> ProgramersTeams { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,6 +54,10 @@ namespace BackendSource.DataBaseSystem
 
             modelBuilder.Entity<LicencesTable>()
                 .HasIndex(x => new { x.GameId, x.PlayerId })
+                .IsUnique();
+
+            modelBuilder.Entity<TeamProgramingDatabse>()
+                .HasIndex(x => x.GameId)
                 .IsUnique();
         }
     }

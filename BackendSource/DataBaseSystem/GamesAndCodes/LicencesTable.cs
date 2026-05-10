@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BackendSource.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BackendSource.DataBaseSystem.GamesAndCodes
@@ -14,7 +15,7 @@ namespace BackendSource.DataBaseSystem.GamesAndCodes
         public UserTable Player { get; set; } = null!;
         public DateTime GrantedAt { get; set; } = DateTime.UtcNow;
         public bool IsRevoked { get; set; }
-        public string? RevokedReason { get; set; }
+        public EPlayerRevokedType RevokedReason { get; set; }
         public DateTime? RevokedAt { get; set; }
     }
 }

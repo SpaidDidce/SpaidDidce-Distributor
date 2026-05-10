@@ -9,5 +9,6 @@ namespace BackendSource.Services.APIServices
         public Task<LoginServiceTask> Login(LoginDto dto);
         public Task<RefreshToken> Logout(string refreshToken);
         public Task<RegisterServiceTask> Register(RegisterDto dto);
+        Task<UserTask> GetUser(Guid userId);
     }
 }

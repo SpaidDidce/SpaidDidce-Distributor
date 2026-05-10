@@ -3,6 +3,7 @@ using BackendSource.PermissionSystem;
 using BackendSource.seeder;
 using BackendSource.Services.APIServices;
 using BackendSource.Services.CompleteServices;
+using BackendSource.Services.Interfaces;
 using BackendSource.Systems;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -31,6 +32,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGameService, GamesSystem>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IKeyService, KeyService>();
+
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
 var dbSettings = builder.Configuration
     .GetSection("DatabaseSettings")

@@ -8,11 +8,11 @@ namespace BackendSource.DataBaseSystem.GamesAndCodes
         public Guid GameVersionId { get; set; }
         public Guid GameId { get; set; }
         public GamesTable Game { get; set; } = null!;
-        public string Version { get; set; } = string.Empty;
-        public string UpdateDesc { get; set; } = string.Empty;
-        public string hashFromVersion { get; set; } = string.Empty;
-        public string FileName { get; set; } = string.Empty;
-        public long Size { get; set; }
+        public string Version { get; set; } = "0.0.0";
+        public string? UpdateDesc { get; set; }
+        public string? hashFromVersion { get; set; }
+        public string? FileName { get; set; }
+        public long? Size { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

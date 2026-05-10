@@ -8,5 +8,8 @@
         public string Version { get; set; } = string.Empty;
         public string sha256 { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
+        public string ExeName { get; set; } = string.Empty;
+
+        public Guid TeamId { get; set; }
     }
 }

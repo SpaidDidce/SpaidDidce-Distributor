@@ -11,13 +11,22 @@ namespace BackendSource.Services.CompleteServices
 {
     public class AuthService(DbContextBa contextBa, IPasswordHasher<UserTable> passHasher, IJwtService jwtService) : IAuthService
     {
-        private readonly DbContextBa _contextBa = contextBa;
+        private readonly DbContextBa _context = contextBa;
         private readonly IPasswordHasher<UserTable> _passHasher = passHasher;
         private readonly IJwtService _jwtService = jwtService;
 
+        public async Task<UserTask> GetUser(Guid userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return UserTask.Fail("Doesnt Exist user");
+
+            return UserTask.Success(user);
+        }
+
         public async Task<LoginServiceTask> Login(LoginDto dto)
         {
-            var user = await _contextBa.Users
+            var user = await _context.Users
                 .Include(u => u.Role)
                 .ThenInclude(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
@@ -41,7 +50,7 @@ namespace BackendSource.Services.CompleteServices
         {
             var tokenHash = RefreshTokenHasher.Hash(refreshToken);
 
-            var rt = await _contextBa.RefreshTokens
+            var rt = await _context.RefreshTokens
                 .FirstOrDefaultAsync(x =>
                     x.TokenHash == tokenHash &&
                     !x.Revoked);
@@ -49,7 +58,7 @@ namespace BackendSource.Services.CompleteServices
             if (rt != null)
             {
                 rt.Revoked = true;
-                await _contextBa.SaveChangesAsync();
+                await _context.SaveChangesAsync();
             }
 
             return rt;
@@ -57,14 +66,14 @@ namespace BackendSource.Services.CompleteServices
 
         public async Task<RegisterServiceTask> Register(RegisterDto dto)
         {
-            var exists = await _contextBa.Users
+            var exists = await _context.Users
                  .AnyAsync(u => u.UserName == dto.UserName.Trim() ||
                                 u.Email == dto.Email.Trim().ToLowerInvariant());
 
             if (exists)
                 return RegisterServiceTask.OnFailed("User Exist");
 
-            var userRole = await _contextBa.RoleTables.FirstOrDefaultAsync(r => r.RoleName == "User");
+            var userRole = await _context.RoleTables.FirstOrDefaultAsync(r => r.RoleName == "User");
 
             if (userRole == null)
                 throw new Exception("Default role 'User' not found");
@@ -79,8 +88,8 @@ namespace BackendSource.Services.CompleteServices
             };
 
 
-            _contextBa.Users.Add(newUser);
-            await _contextBa.SaveChangesAsync();
+            _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
             var jwt = _jwtService.GenerateAccessToken(newUser);
             return RegisterServiceTask.OnSuccess(newUser, jwt.Token, string.Empty);
         }

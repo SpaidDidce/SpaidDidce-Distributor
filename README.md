@@ -35,6 +35,36 @@ The security of the user's session and the integrity of the downloads were the t
 
 ---
 
+## 📡 API Documentation
+
+All secured endpoints require the `Authorization: Bearer <accessToken>` header unless specified otherwise.
+
+### 🔐 Authentication (`/auth`)
+| Method | Endpoint | Request Body / Params | Response | Description |
+|---|---|---|---|---|
+| `POST` | `/auth/login` | `{ Email, Password }` | `200 OK` `{ accessToken, refreshToken }` | Authenticates a user. |
+| `POST` | `/auth/register` | `{ UserName, Email, Password }` | `200 OK` `{ accessToken, refreshToken }` | Registers a new user. |
+| `GET`  | `/auth/logout` | Header: `refresh_token` | `200 OK` | Logs out the user and invalidates tokens. |
+
+### 🎮 Game Library (`/games`)
+| Method | Endpoint | Request Body / Params | Response | Description |
+|---|---|---|---|---|
+| `GET`  | `/games` | None | `200 OK` `List<GamesTable>` | Retrieves all public games. |
+| `POST` | `/games/searchbyname` | `{ gameName }` | `200 OK` `List<GamesTable>` | Searches for games by name. |
+| `GET`  | `/games/{id}/latest/description` | `Guid id` (Route) + `[GameKey]` | `200 OK` `string` | Gets the description of a game (Requires Player License). |
+| `GET`  | `/games/{id}/latest/download` | `Guid id` (Route) + `[GameKey]` | `200 OK` `application/zip` | Streams the latest `.zip` game file. |
+
+### 🛠️ Developer Center (`/programer`)
+Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
+
+| Method | Endpoint | Request Body / Params | Response | Description |
+|---|---|---|---|---|
+| `POST` | `/programer/createteam` | TBD | `200 OK` | Creates a new developer team. |
+| `POST` | `/programer/creategame` | `Guid TeamId` + `[TeamKey(OnlyOwner)]` | `200 OK` | Registers a new game. Only the Team Owner can do this. |
+| `POST` | `/programer/uploadgame` | `multipart/form-data`: `TeamId`, `Gameid`, `gameFile`, `versionDescription` | `200 OK` `{ message, fileSize }` | Uploads a new `.zip` build for a game. Any team member can do this. |
+
+---
+
 ## 🛠️ Getting Started (Local Development)
 
 ### Prerequisites
