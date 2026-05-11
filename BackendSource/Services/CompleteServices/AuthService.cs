@@ -3,17 +3,19 @@ using BackendSource.DataBaseSystem.JwtAndRefreshTokens;
 using BackendSource.DTOs;
 using BackendSource.RTH;
 using BackendSource.Services.APIServices;
+using BackendSource.Services.Interfaces;
 using BackendSource.Services.task;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace BackendSource.Services.CompleteServices
 {
-    public class AuthService(DbContextBa contextBa, IPasswordHasher<UserTable> passHasher, IJwtService jwtService) : IAuthService
+    public class AuthService(DbContextBa contextBa, IPasswordHasher<UserTable> passHasher, IJwtService jwtService, IRefreshTokenService RefreshService) : IAuthService
     {
         private readonly DbContextBa _context = contextBa;
         private readonly IPasswordHasher<UserTable> _passHasher = passHasher;
         private readonly IJwtService _jwtService = jwtService;
+        private readonly IRefreshTokenService _IRefreshService = RefreshService;
 
         public async Task<UserTask> GetUser(Guid userId)
         {
@@ -42,8 +44,10 @@ namespace BackendSource.Services.CompleteServices
                 return LoginServiceTask.OnFailed();
 
             var jwt = _jwtService.GenerateAccessToken(user);
+            var RefreshToken = await _IRefreshService.RefreshToken(user);
 
-            return LoginServiceTask.OnSuccess(jwt.Token, string.Empty);
+
+            return LoginServiceTask.OnSuccess(jwt.Token, RefreshToken);
         }
 
         public async Task<RefreshToken> Logout(string refreshToken)
@@ -91,7 +95,8 @@ namespace BackendSource.Services.CompleteServices
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
             var jwt = _jwtService.GenerateAccessToken(newUser);
-            return RegisterServiceTask.OnSuccess(newUser, jwt.Token, string.Empty);
+            var RefreshToken = await _IRefreshService.RefreshToken(newUser);
+            return RegisterServiceTask.OnSuccess(newUser, jwt.Token, RefreshToken);
         }
     }
 }

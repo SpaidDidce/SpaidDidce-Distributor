@@ -127,7 +127,7 @@ ipcMain.handle('api:getSessionStatus', async () => {
 
 ipcMain.handle('api:logout', async () => {
     const token = store.get('auth.refreshToken');
-    
+
     if (token) {
         try {
             await fetch(`${API_URL}/auth/logout`, {
@@ -153,7 +153,7 @@ ipcMain.handle('api:logout', async () => {
 
 function getAuthHeaders() {
     const token = store.get('auth.accessToken');
-    return { 
+    return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
@@ -171,7 +171,7 @@ ipcMain.handle('api:getPublicGames', async () => {
 
 ipcMain.handle('api:searchGame', async (event, name) => {
     try {
-        const response = await fetch(`${API_URL}/games/searchbyname`, { 
+        const response = await fetch(`${API_URL}/games/searchbyname`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({ gameName: name })
@@ -197,9 +197,9 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
     try {
         // Enviar evento de inicio al renderer
         event.sender.send('download-progress', { status: 'starting', percent: 0 });
-        
+
         const response = await fetch(`${API_URL}/games/${gameId}/latest/download`, { headers: getAuthHeaders() });
-        
+
         if (!response.ok) {
             return { success: false, error: await response.text() };
         }
@@ -213,13 +213,13 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
 
         const downloadDir = path.join(os.homedir(), 'LauncherGames');
         if (!fs.existsSync(downloadDir)) fs.mkdirSync(downloadDir, { recursive: true });
-        
+
         const finalPath = path.join(downloadDir, filename);
         const totalBytes = Number(response.headers.get('content-length')) || 0;
         let downloadedBytes = 0;
-        
+
         const fileStream = fs.createWriteStream(finalPath);
-        
+
         // Transform stream para calcular el progreso
         const { Transform } = require('stream');
         let lastPercent = 0;
@@ -241,12 +241,12 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
         // Usar pipeline nativo de stream Web/Node compatible
         const { Readable } = require('stream');
         const nodeReadable = Readable.fromWeb(response.body);
-        
+
         await pipeline(nodeReadable, progressStream, fileStream);
-        
+
         event.sender.send('download-progress', { status: 'completed', percent: 100, path: finalPath });
         return { success: true, path: finalPath };
-        
+
     } catch (err) {
         console.error(err);
         event.sender.send('download-progress', { status: 'error' });

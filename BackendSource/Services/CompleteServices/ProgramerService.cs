@@ -4,6 +4,8 @@ using BackendSource.DataBaseSystem.Programers;
 using BackendSource.DTOs.GamesDtos;
 using BackendSource.DTOs.ProgramerDtos;
 using BackendSource.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.X509Certificates;
 
 namespace BackendSource.Services.CompleteServices
 {
@@ -12,14 +14,23 @@ namespace BackendSource.Services.CompleteServices
         private readonly DbContextBa _context = context;
 
 
-        public Task<TeamProgramingDatabse?> AddPlayerToTeam(AddPlayerToTeamDto dto)
+        public async Task<TeamProgramingDatabse?> AddPlayerToTeam(Guid TeamId, AddPlayerToTeamDto dto)
         {
-            throw new NotImplementedException();
+            var team = await _context.ProgramersTeams.FirstAsync(p => p.TeamId == TeamId);
+            var NewPlayer = await _context.Users.FirstOrDefaultAsync(p => p.Id == dto.PlayerId);
+
+            team.UsersInTeam.Add(NewPlayer);
+            await _context.SaveChangesAsync();
+            return team;
         }
 
-        public Task<TeamProgramingDatabse?> ChangeTeamName(string NewName)
+        public async Task<TeamProgramingDatabse?> ChangeTeamName(Guid teamId, ChangeNameTeamDto dto)
         {
-            throw new NotImplementedException();
+            var Team = await _context.ProgramersTeams.FirstAsync(p => p.TeamId == teamId);
+            Team.TeamName = dto.NewName;
+
+            await _context.SaveChangesAsync();
+            return Team;
         }
 
         public async Task<GamesTable> createNewGame(CreateNewGameDto dto)
@@ -40,9 +51,9 @@ namespace BackendSource.Services.CompleteServices
                 CreatedAt = DateTime.UtcNow
             };
 
-
             _context.Games.Add(newGame);
             _context.GameVersions.Add(newVersion);
+            newGame.GameVersions.Add(newVersion);
             await _context.SaveChangesAsync();
             return newGame;
         }
@@ -61,9 +72,24 @@ namespace BackendSource.Services.CompleteServices
             return newTeam;
         }
 
-        public Task<GamesTable?> updateGame(newVersionDto dto)
+        public async Task<GamesTable?> updateGame(Guid TeamId, newVersionDto dto)
         {
-            throw new NotImplementedException();
+            var game = await _context.Games.FirstOrDefaultAsync(P => P.GameId == dto.GameId);
+            
+
+
+            var NewVersion = new GameVersionTable()
+            {
+                GameId = game.GameId,
+                Version = dto.newVersion,
+                FileName = dto.nameFile,
+                UpdateDesc = dto.UpdateDesc,
+            };
+
+            _context.GameVersions.Add(NewVersion);
+            game.GameVersions.Add(NewVersion);
+            await _context.SaveChangesAsync();
+            return game;
         }
     }
 }
