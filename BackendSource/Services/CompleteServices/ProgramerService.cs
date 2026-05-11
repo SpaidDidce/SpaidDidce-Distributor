@@ -1,4 +1,4 @@
-﻿using BackendSource.DataBaseSystem;
+using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DataBaseSystem.Programers;
 using BackendSource.DTOs.GamesDtos;
@@ -31,14 +31,15 @@ namespace BackendSource.Services.CompleteServices
             return Team;
         }
 
-        public async Task<GamesTable> createNewGame(CreateNewGameDto dto)
+        public async Task<GamesTable> createNewGame(Guid teamId, CreateNewGameDto dto)
         {
             var newGame = new GamesTable()
             {
                 GameId = Guid.NewGuid(),
                 GameName = dto.GameName,
                 GameDescription = dto.GameDescription,
-                ExeName = dto.ExeName
+                ExeName = dto.ExeName,
+                TeamId = teamId,
             };
 
             var newVersion = new GameVersionTable()
@@ -70,6 +71,60 @@ namespace BackendSource.Services.CompleteServices
             return newTeam;
         }
 
+        public async Task<bool> deleteTeam(Guid TeamId)
+        {
+            var team = await _context.ProgramersTeams.FirstOrDefaultAsync(p => p.TeamId == TeamId);
+            if (team == null)
+            {
+                return true;
+            }
+
+            if (team.UsersInTeam == null)
+            {
+                // nothing
+            }
+            else
+            {
+                var users = team.UsersInTeam;
+
+                foreach(var user in users)
+                {
+                    team.UsersInTeam.Remove(user);
+                }
+            }
+
+
+            var games = await _context.Games.Where(g => g.TeamId == TeamId).ToListAsync();
+
+            foreach (var game in games)
+            {
+                game.GameIsPublic = false;
+            }
+
+
+            team.ItsRevoked = true;
+            team.RevokedReason = BackendSource.Enums.ERevokedReasonsTeamType.Disband;
+            team.RevokedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<TeamProgramingDatabse>> GetTeamFromPlayer(Guid playerId)
+        {
+            var player = await _context.Users.FirstOrDefaultAsync(p => p.Id == playerId);
+            if (player == null)
+            {
+                return new List<TeamProgramingDatabse>();
+            }
+
+            var teams = await _context.ProgramersTeams
+                .Where(p => p.OwnerId == player.Id)
+                .ToListAsync();
+
+            return teams;
+        }
+
         public async Task<GamesTable?> updateGame(Guid TeamId, newVersionDto dto)
         {
             var game = await _context.Games.FirstOrDefaultAsync(P => P.GameId == dto.GameId);
@@ -85,6 +140,26 @@ namespace BackendSource.Services.CompleteServices
             game.GameVersions.Add(NewVersion);
             await _context.SaveChangesAsync();
             return game;
+        }
+
+        public async Task<bool> publicGame(Guid TeamId, PublicGameDto dto)
+        {
+            var game = await _context.Games.FirstOrDefaultAsync(p => p.GameId == dto.GameId && p.TeamId == TeamId);
+            if (game == null)
+            {
+                return false;
+            }
+
+            game.GameIsPublic = true;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<GamesTable>> GetGameList(Guid TeamId)
+        {
+            List<GamesTable> games = await _context.Games.Where(p => p.TeamId == TeamId).ToListAsync();
+            
+            return games;
         }
     }
 }

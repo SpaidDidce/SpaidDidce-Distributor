@@ -13,8 +13,21 @@ using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.Eventing.Reader;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = null;
+});
+
+builder.Services.Configure<FormOptions>(x =>
+{
+    x.ValueLengthLimit = int.MaxValue;
+    x.MultipartBodyLengthLimit = int.MaxValue;
+    x.MemoryBufferThreshold = int.MaxValue;
+});
 
 // Add services to the container.
 
@@ -35,6 +48,7 @@ builder.Services.AddScoped<IKeyService, KeyService>();
 
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IProgramerService, ProgramerService>();
+builder.Services.AddScoped<IMeService, MeService>();
 
 var dbSettings = builder.Configuration
     .GetSection("DatabaseSettings")

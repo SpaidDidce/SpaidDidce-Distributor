@@ -10,10 +10,14 @@ const displayEmail = document.getElementById('display-email');
 const logoutBtn = document.getElementById('logout-btn');
 
 // Elementos de la Biblioteca
-const gamesGrid = document.getElementById('games-grid');
-const gamesLoading = document.getElementById('games-loading');
-const searchInput = document.getElementById('search-input');
-const searchBtn = document.getElementById('search-btn');
+    const gamesGrid = document.getElementById('games-grid');
+    const gamesLoading = document.getElementById('games-loading');
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-btn');
+    const viewTitle = document.getElementById('view-title');
+    const navItems = document.querySelectorAll('.nav-item');
+
+    let currentView = 'store'; // 'store' o 'library'
 
 // Elementos del Modal
 const gameModal = document.getElementById('game-modal');
@@ -36,7 +40,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const session = await window.launcherAPI.getSessionStatus();
         if (session.loggedIn) {
-            showMainView(session.email);
+            // Intentamos renovar el token antes de entrar
+            const refreshed = await window.launcherAPI.refreshSession();
+            if (refreshed.success) {
+                showMainView(session.email);
+            } else {
+                showAuthView(); // Token caducado o inválido
+            }
         }
     } catch (error) {
         console.error("Error al verificar sesión:", error);
@@ -167,7 +177,53 @@ function showAuthView() {
     }, 300);
 }
 
-// Lógica de Biblioteca de Juegos
+// Navegación Sidebar
+navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const view = item.getAttribute('data-view');
+        if (view === currentView) return;
+
+        navItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        currentView = view;
+
+        if (view === 'store') {
+            viewTitle.textContent = 'Tienda Global';
+            loadStore();
+        } else {
+            viewTitle.textContent = 'Mi Biblioteca';
+            loadLibrary();
+        }
+    });
+});
+
+async function loadStore() {
+    gamesGrid.innerHTML = '';
+    // if (gamesLoading) gamesLoading.style.display = 'block';
+    
+    const response = await window.launcherAPI.getPublicGames();
+    // if (gamesLoading) gamesLoading.style.display = 'none';
+    
+    if(response.success) {
+        renderGames(response.games);
+    }
+}
+
+async function loadLibrary() {
+    gamesGrid.innerHTML = '';
+    // if (gamesLoading) gamesLoading.style.display = 'block';
+    
+    const response = await window.launcherAPI.getMyLibrary();
+    // if (gamesLoading) gamesLoading.style.display = 'none';
+    
+    if(response.success) {
+        renderGames(response.games);
+    } else {
+        gamesGrid.innerHTML = '<p style="color:var(--text-muted); grid-column: 1/-1;">Error al cargar biblioteca.</p>';
+    }
+}
+
+// Lógica de Biblioteca de Juegos (Antigua, ahora usamos loadStore/loadLibrary)
 async function loadGames() {
     gamesGrid.innerHTML = '';
     gamesLoading.style.display = 'block';
@@ -227,26 +283,55 @@ function renderGames(games) {
     });
 }
 
+let currentExeName = null;
+
 async function openGameModal(game) {
     currentGameId = game.gameId;
+    currentExeName = game.exeName;
     modalGameTitle.textContent = game.gameName;
-    modalGameDesc.textContent = "Cargando descripción...";
+    modalGameDesc.textContent = "Cargando información...";
     gameModal.style.display = 'flex';
     
     downloadProgressContainer.style.display = 'none';
-    downloadBtn.style.display = 'block';
     downloadBtn.disabled = false;
-    downloadBtn.textContent = 'Descargar Última Versión';
+    downloadBtn.style.background = 'var(--primary)'; // Reset color
+    
+    // 1. Comprobar si ya es dueño (para la tienda)
+    const isOwned = await window.launcherAPI.checkIfGameOwned(game.gameId);
+    // 2. Comprobar si está descargado
+    const isDownloaded = await window.launcherAPI.checkIfGameDownloaded(game.gameId);
+    
+    if (currentView === 'store') {
+        if (isOwned) {
+            downloadBtn.textContent = 'Ya en tu biblioteca';
+            downloadBtn.disabled = true;
+            downloadBtn.style.background = 'var(--bg-card)';
+        } else {
+            downloadBtn.textContent = 'Añadir a mi Biblioteca (Gratis/Test)';
+            downloadBtn.onclick = () => handleBuy(game.gameId);
+        }
+    } else {
+        // Vista de Biblioteca
+        if (isDownloaded) {
+            downloadBtn.textContent = 'JUGAR AHORA';
+            downloadBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            downloadBtn.onclick = async () => {
+                const res = await window.launcherAPI.launchGame(currentGameId, currentExeName);
+                if (!res.success) alert("Error al iniciar: " + res.error);
+            };
+        } else {
+            downloadBtn.textContent = 'Descargar Última Versión';
+            downloadBtn.onclick = () => handleDownload();
+        }
+    }
     
     const res = await window.launcherAPI.getLatestDescription(game.gameId);
     if(res.success) {
-        // En C# se devuelve en JSON así: "{ "gameDescription": "..." }" si se serializa,
-        // pero vamos a tratar de parsear si es JSON.
         let desc = res.description;
         try { desc = JSON.parse(desc); } catch (e) {}
         modalGameDesc.textContent = desc;
     } else {
-        modalGameDesc.textContent = "No hay descripción disponible. (" + res.error + ")";
+        modalGameDesc.textContent = "No hay descripción disponible.";
     }
 }
 
@@ -255,7 +340,23 @@ closeModalBtn.addEventListener('click', () => {
     currentGameId = null;
 });
 
-downloadBtn.addEventListener('click', async () => {
+async function handleBuy(gameId) {
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = 'Procesando...';
+    
+    const res = await window.launcherAPI.buyGame(gameId);
+    if (res.success) {
+        alert('¡Juego añadido a tu biblioteca!');
+        gameModal.style.display = 'none';
+        loadLibrary(); // Refrescar biblioteca
+    } else {
+        alert('Error al añadir juego: ' + res.error);
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = 'Reintentar';
+    }
+}
+
+async function handleDownload() {
     if(!currentGameId) return;
     
     downloadBtn.disabled = true;
@@ -268,6 +369,10 @@ downloadBtn.addEventListener('click', async () => {
         downloadStatus.textContent = "Error: " + res.error;
         downloadStatus.style.color = 'var(--error)';
     }
+}
+
+downloadBtn.addEventListener('click', () => {
+    // Este listener lo manejamos ahora dinámicamente en openGameModal
 });
 
 // Escuchar progreso de descarga
@@ -276,11 +381,23 @@ window.launcherAPI.onDownloadProgress((data) => {
         downloadStatus.textContent = `Descargando... ${data.percent}%`;
         downloadStatus.style.color = 'var(--text-muted)';
         downloadProgressFill.style.width = `${data.percent}%`;
+    } else if(data.status === 'extracting') {
+        downloadStatus.textContent = `Instalando (Descomprimiendo)...`;
+        downloadStatus.style.color = '#f59e0b'; // Naranja
+        downloadProgressFill.style.width = `100%`;
     } else if(data.status === 'completed') {
-        downloadStatus.textContent = `¡Completado! Guardado en:\n${data.path}`;
+        downloadStatus.textContent = `¡Listo para jugar!`;
         downloadStatus.style.color = '#10b981';
         downloadProgressFill.style.width = `100%`;
-        downloadBtn.style.display = 'none';
+        
+        // Transformar botón de descarga en botón de jugar
+        downloadBtn.textContent = 'JUGAR AHORA';
+        downloadBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        downloadBtn.disabled = false;
+        downloadBtn.onclick = async () => {
+            const res = await window.launcherAPI.launchGame(currentGameId, currentExeName);
+            if (!res.success) alert("Error al iniciar juego: " + res.error);
+        };
     } else if(data.status === 'error') {
         downloadStatus.textContent = "Fallo en la descarga.";
         downloadStatus.style.color = 'var(--error)';

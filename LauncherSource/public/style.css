@@ -161,51 +161,160 @@ body {
     text-decoration: underline;
 }
 
-/* ================= LIBRARY VIEW ================= */
+/* ================= MAIN VIEW (SIDEBAR + CONTENT) ================= */
 #main-view {
     display: none; 
-    flex-direction: column;
+    flex-direction: row; /* Sidebar a la izquierda, contenido a la derecha */
     width: 100vw;
     height: 100vh;
-    background: var(--bg-main);
 }
 
-.library-header {
-    width: 100%;
-    padding: 20px 40px;
+.sidebar {
+    width: 260px;
+    background-color: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+}
+
+.sidebar .logo {
+    padding: 0 24px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    font-size: 24px;
+}
+
+.sidebar h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.nav-menu {
+    flex-grow: 1;
+}
+
+.nav-menu ul {
+    list-style: none;
+}
+
+.nav-item {
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+}
+
+.nav-item.active {
+    color: var(--primary);
+    background-color: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+.nav-icon {
+    font-size: 18px;
+}
+
+.user-info {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    max-width: 160px;
+}
+
+#display-email {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-details small {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+#logout-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+#logout-btn:hover {
+    background-color: var(--error);
+    color: white;
+}
+
+/* CONTENT AREA */
+.content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-dark);
+}
+
+.content-header {
+    padding: 24px 40px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(20, 20, 20, 0.8);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border);
 }
 
-.search-container {
+.search-bar {
     display: flex;
     align-items: center;
-    background: rgba(255,255,255,0.05);
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 4px 12px;
-    border: 1px solid rgba(255,255,255,0.1);
 }
 
-.search-container input {
+.search-bar input {
     background: none;
     border: none;
-    color: var(--text-main);
+    color: white;
     padding: 8px;
-    width: 250px;
+    width: 200px;
     outline: none;
 }
 
-.search-container button {
+.search-bar button {
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
 }
 
-.library-content {
+.games-grid {
     padding: 40px;
     flex-grow: 1;
     overflow-y: auto;

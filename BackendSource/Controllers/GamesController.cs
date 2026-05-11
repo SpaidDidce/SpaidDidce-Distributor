@@ -1,4 +1,4 @@
-﻿using BackendSource.Security;
+using BackendSource.Security;
 using BackendSource.Services.APIServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,9 +22,12 @@ namespace BackendSource.Controllers
             if (game == null)
                 return NotFound();
 
-            var path = Path.Combine($"GameFiles/{game.GameId}", game.FileName);
+            var path = Path.GetFullPath(Path.Combine("GameFiles", game.GameId.ToString(), game.FileName));
 
-            var stream = System.IO.File.OpenRead(path);
+            if (!System.IO.File.Exists(path))
+            {
+                return NotFound("El archivo físico no existe en el servidor.");
+            }
 
             return PhysicalFile(path, "application/zip", game.FileName);
         }

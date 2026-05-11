@@ -1,9 +1,5 @@
-using BackendSource.DataBaseSystem;
-using BackendSource.DataBaseSystem.GamesAndCodes;
-using BackendSource.DataBaseSystem.JwtAndRefreshTokens;
 using BackendSource.DTOs.GamesDtos;
 using BackendSource.DTOs.ProgramerDtos;
-using BackendSource.RTH;
 using BackendSource.Security;
 using BackendSource.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -19,12 +15,20 @@ namespace BackendSource.Controllers.Programers
         private readonly IProgramerService _programerService = service;
 
 
+        [Authorize]
         [TeamKey]
         [HttpPost("uploadgame")]
-        public async Task<IActionResult> UploadGame(Guid TeamId, Guid Gameid, IFormFile gameFile, string versionDescription)
+        [DisableRequestSizeLimit]
+        public async Task<IActionResult> UploadGame(
+            [FromQuery] Guid TeamId, 
+            [FromQuery] Guid Gameid, 
+            [FromQuery] string version, 
+            [FromQuery] string versionDescription)
         {
+            var gameFile = Request.Form.Files.FirstOrDefault();
+
             if (gameFile == null || gameFile.Length == 0)
-                return BadRequest("No se ha enviado ningún archivo.");
+                return BadRequest("No se ha enviado ningún archivo o el archivo está vacío.");
 
             if (!gameFile.FileName.EndsWith(".zip"))
                 return BadRequest("Solo se admiten archivos .zip");
@@ -37,14 +41,28 @@ namespace BackendSource.Controllers.Programers
             {
                 await gameFile.CopyToAsync(stream);
             }
-            return Ok(new { message = "Juego subido con éxito", fileSize = gameFile.Length });
+
+            // Registrar en la base de datos
+            var updateResult = await _programerService.updateGame(TeamId, new newVersionDto
+            {
+                GameId = Gameid,
+                newVersion = version,
+                nameFile = gameFile.FileName,
+                UpdateDesc = versionDescription
+            });
+
+            if (updateResult == null)
+                return BadRequest("El archivo se subió pero no se pudo registrar la versión en la DB.");
+
+            return Ok(new { message = "Juego subido y registrado con éxito", fileSize = gameFile.Length });
         }
 
+        [Authorize]
         [TeamKey(OnlyOwner = true)]
         [HttpPost("creategame")]
-        public async Task<IActionResult> CreateGame(Guid TeamId, CreateNewGameDto dto)
+        public async Task<IActionResult> CreateGame([FromQuery] Guid TeamId, CreateNewGameDto dto)
         {
-            var result = await _programerService.createNewGame(dto);
+            var result = await _programerService.createNewGame(TeamId ,dto);
             if (result == null)
             {
                 return BadRequest("Something is wrong, try again later");
@@ -72,22 +90,90 @@ namespace BackendSource.Controllers.Programers
             return Ok("Team Create Succesfully");
         }
 
+        [Authorize]
         [TeamKey(OnlyOwner = true)]
         [HttpPost("changeteamname")]
-        public async Task<IActionResult> changeteamname(Guid TeamId, string NewName)
+        public async Task<IActionResult> changeteamname(Guid TeamId, ChangeNameTeamDto dto)
         {
+            var result = await _programerService.ChangeTeamName(TeamId, dto);
+            if (result == null)
+            {
+                return BadRequest("Something is wrong, try again later");
+            }
+
+            return Ok("Team name Changed succesfully");
+        }
+
+        [Authorize]
+        [TeamKey(OnlyOwner = true)]
+        [HttpPost("addplayertoteam")]
+        public async Task<IActionResult> AddPlayerToTeam(Guid TeamId, AddPlayerToTeamDto dto)
+        {
+            var result = await _programerService.AddPlayerToTeam(TeamId, dto);
+            if (result == null)
+            {
+                return BadRequest("Something is wrong, try again later");
+            }
+
+            return Ok(result);
+        }
 
 
-            return Ok();
+        [Authorize]
+        [HttpGet("getteam")]
+        public async Task<IActionResult> GetTeamFromPlayer()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null) return Unauthorized();
+
+            Guid userId = Guid.Parse(userIdClaim);
+
+            var result = await _programerService.GetTeamFromPlayer(userId);
+            if (result == null)
+            {
+                return BadRequest("Something is wrong, try again later");
+            }
+
+            return Ok(result);
         }
 
         [TeamKey(OnlyOwner = true)]
-        [HttpPost("addplayertoteam")]
-        public async Task<IActionResult> AddPlayerToTeam(Guid TeamId, Guid NewPlayerId)
+        [HttpPost("deleteteam")]
+        public async Task<IActionResult> DeleteTeam([FromQuery] Guid TeamId)
         {
+            var result = await _programerService.deleteTeam(TeamId);
+            if (!result)
+            {
+                return BadRequest("Something is wrong, try again later");
+            }
 
+            return Ok(result);
+        }
 
-            return Ok();
+        [TeamKey]
+        [HttpPost("publicgame")]
+        public async Task<IActionResult> publicgame(Guid TeamId, PublicGameDto dto)
+        {
+            var result = await _programerService.publicGame(TeamId, dto);
+            if (!result)
+            {
+                return BadRequest("Something is wrong, try again later");
+            }
+
+            return Ok(result);
+        }
+
+        [TeamKey]
+        [HttpGet("getgamesfromteam")]
+        public async Task<IActionResult> getgameFromTeam(Guid TeamId)
+        {
+            var result = await _programerService.GetGameList(TeamId);
+            if (result == null)
+            {
+                return BadRequest("Something is wrong, try again later");
+            }
+
+            return Ok(result);
         }
     }
 }

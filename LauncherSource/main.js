@@ -116,13 +116,41 @@ ipcMain.handle('api:login', async (event, email, password) => {
 
 ipcMain.handle('api:getSessionStatus', async () => {
     // Verificamos si tenemos un token guardado
-    const token = store.get('auth.refreshToken');
+    const refreshToken = store.get('auth.refreshToken');
     const email = store.get('auth.email');
 
-    if (token && email) {
+    if (refreshToken && email) {
         return { loggedIn: true, email: email };
     }
     return { loggedIn: false };
+});
+
+ipcMain.handle('api:refresh-session', async () => {
+    const refreshToken = store.get('auth.refreshToken');
+    if (!refreshToken) return { success: false };
+
+    try {
+        const response = await fetch(`${API_URL}/Refresh/refresh`, {
+            method: 'POST',
+            headers: { 'refresh_token': refreshToken }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            store.set('auth.accessToken', data.accessToken);
+            store.set('auth.refreshToken', data.refreshToken);
+            console.log("Sesión de jugador renovada.");
+            return { success: true };
+        } else {
+            console.log("Sesión expirada, cerrando...");
+            store.delete('auth.accessToken');
+            store.delete('auth.refreshToken');
+            store.delete('auth.email');
+            return { success: false };
+        }
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
 });
 
 ipcMain.handle('api:logout', async () => {
@@ -169,6 +197,30 @@ ipcMain.handle('api:getPublicGames', async () => {
     }
 });
 
+ipcMain.handle('api:getMyLibrary', async () => {
+    try {
+        const response = await fetch(`${API_URL}/Me`, { headers: getAuthHeaders() });
+        if (response.ok) return { success: true, games: await response.json() };
+        return { success: false, error: await response.text() };
+    } catch (err) {
+        return { success: false, error: 'Error de conexión.' };
+    }
+});
+
+ipcMain.handle('api:buyGame', async (event, gameId) => {
+    try {
+        const response = await fetch(`${API_URL}/Me`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(gameId) // Enviamos el GUID directamente
+        });
+        if (response.ok) return { success: true };
+        return { success: false, error: await response.text() };
+    } catch (err) {
+        return { success: false, error: 'Error de conexión.' };
+    }
+});
+
 ipcMain.handle('api:searchGame', async (event, name) => {
     try {
         const response = await fetch(`${API_URL}/games/searchbyname`, {
@@ -205,10 +257,16 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
         }
 
         // Obtener nombre del archivo de la cabecera (o genérico si no lo manda el backend)
+        // Obtener nombre del archivo de la cabecera de forma más robusta
         const contentDisposition = response.headers.get('content-disposition');
         let filename = `${gameId}-latest.zip`;
-        if (contentDisposition && contentDisposition.includes('filename=')) {
-            filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
+        
+        if (contentDisposition) {
+            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+            const matches = filenameRegex.exec(contentDisposition);
+            if (matches != null && matches[1]) {
+                filename = matches[1].replace(/["']/g, '').split(';')[0].trim();
+            }
         }
 
         const downloadDir = path.join(os.homedir(), 'LauncherGames');
@@ -240,16 +298,93 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
 
         // Usar pipeline nativo de stream Web/Node compatible
         const { Readable } = require('stream');
-        const nodeReadable = Readable.fromWeb(response.body);
+        let nodeReadable;
+        
+        try {
+            nodeReadable = Readable.fromWeb(response.body);
+        } catch (e) {
+            // Fallback para versiones de Node que no tengan fromWeb o tengan problemas
+            nodeReadable = response.body; 
+        }
 
         await pipeline(nodeReadable, progressStream, fileStream);
 
-        event.sender.send('download-progress', { status: 'completed', percent: 100, path: finalPath });
-        return { success: true, path: finalPath };
+        // --- INICIO DE DESCOMPRESIÓN ---
+        try {
+            event.sender.send('download-progress', { status: 'extracting', percent: 100 });
+            const AdmZip = require('adm-zip');
+            const zip = new AdmZip(finalPath);
+            
+            // Usamos el gameId para el nombre de la carpeta (estilo Steam)
+            const extractPath = path.join(downloadDir, gameId);
+            if (!fs.existsSync(extractPath)) fs.mkdirSync(extractPath, { recursive: true });
+            
+            zip.extractAllTo(extractPath, true);
+            console.log(`Juego extraído en: ${extractPath}`);
+            
+            // Borramos el ZIP original
+            fs.unlinkSync(finalPath);
+
+            event.sender.send('download-progress', { status: 'completed', percent: 100, path: extractPath });
+            return { success: true, path: extractPath };
+        } catch (unzipErr) {
+            console.error("Error al descomprimir:", unzipErr);
+            return { success: false, error: 'Descarga completa, pero falló la descompresión.' };
+        }
+        // --- FIN DE DESCOMPRESIÓN ---
 
     } catch (err) {
-        console.error(err);
-        event.sender.send('download-progress', { status: 'error' });
-        return { success: false, error: 'Error durante la descarga.' };
+        console.error("Error en la descarga:", err);
+        event.sender.send('download-progress', { status: 'error', message: err.message });
+        return { success: false, error: 'Error durante la descarga: ' + err.message };
+    }
+});
+
+ipcMain.handle('api:checkIfGameDownloaded', async (event, gameId) => {
+    const os = require('os');
+    const path = require('path');
+    const downloadDir = path.join(os.homedir(), 'LauncherGames');
+    const gameFolder = path.join(downloadDir, gameId);
+    return fs.existsSync(gameFolder);
+});
+
+ipcMain.handle('api:checkIfGameOwned', async (event, gameId) => {
+    try {
+        const response = await fetch(`${API_URL}/Me/getifgameihaveit?GameId=${gameId}`, { headers: getAuthHeaders() });
+        if (response.ok) return await response.json();
+        return false;
+    } catch (err) {
+        return false;
+    }
+});
+
+ipcMain.handle('api:launchGame', async (event, { gameId, exeName }) => {
+    const { spawn } = require('child_process');
+    const os = require('os');
+    const path = require('path');
+    
+    try {
+        const downloadDir = path.join(os.homedir(), 'LauncherGames');
+        const gameFolder = path.join(downloadDir, gameId);
+        const exePath = path.join(gameFolder, exeName);
+
+        if (!fs.existsSync(exePath)) {
+            return { success: false, error: `No se encuentra el ejecutable: ${exeName}` };
+        }
+
+        console.log(`Iniciando juego: ${exePath}`);
+        
+        const gameProcess = spawn(exePath, [], {
+            cwd: gameFolder, // Importante para que el juego encuentre sus assets
+            detached: true,
+            stdio: 'ignore'
+        });
+
+        gameProcess.unref(); // Permite que el launcher siga vivo aunque el juego se cierre
+
+        return { success: true };
+    } catch (err) {
+        console.error("Error al lanzar el juego:", err);
+        return { success: false, error: err.message };
     }
 });

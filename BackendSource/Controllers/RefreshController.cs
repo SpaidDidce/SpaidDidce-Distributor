@@ -1,4 +1,4 @@
-﻿using BackendSource.RTH;
+using BackendSource.RTH;
 using BackendSource.Services.APIServices;
 using BackendSource.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +15,7 @@ namespace BackendSource.Controllers
         private readonly IAuthService _authService = authService;
         private readonly IJwtService _jwtService = jwtService;
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost("refresh")]
         public async Task<IActionResult> refreshtoken()
         {
@@ -25,7 +25,7 @@ namespace BackendSource.Controllers
             var test = RefreshTokenHasher.Hash(refreshToken!);
 
             var oldRefreshToken = await _refreshTokenService.GetRefreshTokenFromDB(test);
-            if (oldRefreshToken == null)
+            if (oldRefreshToken == null || oldRefreshToken.token == null)
                 return Unauthorized();
 
             var newRefreshToken = await _refreshTokenService.RevokeAndGenerateNew(oldRefreshToken.token!.TokenHash);

@@ -14,5 +14,8 @@
   "devDependencies": {
     "electron": "^42.0.1",
     "electron-store": "^11.0.2"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17"
   }
 }

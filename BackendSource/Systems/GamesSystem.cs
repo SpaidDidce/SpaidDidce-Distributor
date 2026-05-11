@@ -1,4 +1,4 @@
-﻿using BackendSource.DataBaseSystem;
+using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DTOs.GamesDtos;
 using BackendSource.Services.APIServices;
@@ -32,15 +32,19 @@ namespace BackendSource.Systems
                 GameId = Guid.NewGuid(),
                 GameName = dto.GameName,
                 GameDescription = dto.GameDescription,
+                GameItsFree = dto.ItsFree,
+                Price = dto.Price
             };
 
             var NewGameVersion = new GameVersionTable()
             {
                 GameId = NewGame.GameId,
                 GameVersionId = Guid.NewGuid(),
+                Version = "1.0.0",
                 FileName = dto.FileName,
                 hashFromVersion = dto.sha256,
-                Game = NewGame
+                Game = NewGame,
+                CreatedAt = DateTime.UtcNow
             };
 
 
@@ -80,10 +84,13 @@ namespace BackendSource.Systems
 
             var v1 = SemVersion.Parse(VersionInPc);
 
-            var latest = await _context.GameVersions
-                .Where(p => p.GameId == gameId)
-                .OrderByDescending(v => SemVersion.Parse(v.Version))
-                .FirstOrDefaultAsync();
+            var versions = await _context.GameVersions
+                .Where(p => p.GameId == gameId && !string.IsNullOrEmpty(p.Version))
+                .ToListAsync();
+
+            var latest = versions
+                .OrderByDescending(v => SemVersion.Parse(v.Version), SemVersion.PrecedenceComparer)
+                .FirstOrDefault();
 
             if (latest == null)
                 return false;
@@ -96,18 +103,24 @@ namespace BackendSource.Systems
         public async Task<GameVersionTable?> GetLatestVersion(Guid id)
         {
             var latest = await _context.GameVersions
-                .Where(x => x.GameId == id)
+                .Where(x => x.GameId == id && !string.IsNullOrEmpty(x.Version))
                 .ToListAsync();
 
-            return latest.OrderByDescending(v => SemVersion.Parse(v.Version)).FirstOrDefault();
+            if (latest.Count == 0) return null;
+
+            // Usamos el comparador oficial de la librería para evitar errores de IComparable
+            return latest.OrderByDescending(v => SemVersion.Parse(v.Version), SemVersion.PrecedenceComparer).FirstOrDefault();
         }
         
         public async Task<string> GetLastVersionDesc(Guid GameId)
         {
-            var latest = await _context.GameVersions
-                .Where(p => p.GameId == GameId)
-                .OrderByDescending(v => SemVersion.Parse(v.Version))
-                .FirstOrDefaultAsync();
+            var versions = await _context.GameVersions
+                .Where(p => p.GameId == GameId && !string.IsNullOrEmpty(p.Version))
+                .ToListAsync();
+
+            var latest = versions
+                .OrderByDescending(v => SemVersion.Parse(v.Version), SemVersion.PrecedenceComparer)
+                .FirstOrDefault();
 
             if (latest == null)
             {

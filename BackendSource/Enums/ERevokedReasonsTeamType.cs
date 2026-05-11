@@ -1,9 +1,10 @@
-﻿namespace BackendSource.Interfaces
+﻿namespace BackendSource.Enums
 {
     public enum ERevokedReasonsTeamType
     {
         Virus,
         Delete,
-        Banned
+        Banned,
+        Disband
     }
 }

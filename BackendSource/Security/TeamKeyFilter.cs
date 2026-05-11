@@ -25,7 +25,7 @@ namespace BackendSource.Security
             }
 
             var hasAccess = await dbContext.ProgramersTeams.AnyAsync(
-                x => x.GameId != null && x.GameId.Contains(gameId) && 
+                x => (x.TeamId == gameId || (x.GameId != null && x.GameId.Contains(gameId))) && 
                      (x.OwnerId == userId || (!onlyOwner && x.UsersInTeam != null && x.UsersInTeam.Any(u => u.Id == userId))),
                 context.HttpContext.RequestAborted);
 

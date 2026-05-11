@@ -1,4 +1,4 @@
-﻿using BackendSource.DataBaseSystem;
+using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.JwtAndRefreshTokens;
 using BackendSource.DTOs;
 using BackendSource.RTH;
@@ -19,7 +19,12 @@ namespace BackendSource.Services.CompleteServices
 
         public async Task<UserTask> GetUser(Guid userId)
         {
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .ThenInclude(r => r.RolePermissions)
+                .ThenInclude(rp => rp.Permission)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
             if (user == null)
                 return UserTask.Fail("Doesnt Exist user");
 

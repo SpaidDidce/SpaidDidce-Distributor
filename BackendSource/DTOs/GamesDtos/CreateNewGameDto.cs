@@ -9,7 +9,7 @@
         public string sha256 { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
         public string ExeName { get; set; } = string.Empty;
-
-        public Guid TeamId { get; set; }
+        public bool ItsFree { get; set; } = true;
+        public float Price { get; set; }
     }
 }
