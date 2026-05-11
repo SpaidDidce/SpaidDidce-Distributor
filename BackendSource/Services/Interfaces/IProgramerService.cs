@@ -9,7 +9,7 @@ namespace BackendSource.Services.Interfaces
     {
         public Task<GamesTable> createNewGame(CreateNewGameDto dto);
         public Task<GamesTable?> updateGame(Guid TeamId, newVersionDto dto);
-        public Task<TeamProgramingDatabse?> CreateNewTeam(CreateNewTeamDto dto);
+        public Task<TeamProgramingDatabse?> CreateNewTeam(Guid OnwerId ,CreateNewTeamDto dto);
         public Task<TeamProgramingDatabse?> AddPlayerToTeam(Guid TeamId ,AddPlayerToTeamDto dto);
         public Task<TeamProgramingDatabse?> ChangeTeamName(Guid teamId, ChangeNameTeamDto dto);
     }

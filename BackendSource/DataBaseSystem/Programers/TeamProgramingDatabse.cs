@@ -9,6 +9,7 @@ namespace BackendSource.DataBaseSystem.Programers
     {
         [Key]
         public Guid TeamId { get; set; }
+
         public List<Guid>? GameId { get; set; }
         public string TeamName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

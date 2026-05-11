@@ -1,11 +1,14 @@
 using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
+using BackendSource.DataBaseSystem.JwtAndRefreshTokens;
 using BackendSource.DTOs.GamesDtos;
 using BackendSource.DTOs.ProgramerDtos;
+using BackendSource.RTH;
 using BackendSource.Security;
 using BackendSource.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BackendSource.Controllers.Programers
 {
@@ -54,7 +57,13 @@ namespace BackendSource.Controllers.Programers
         [HttpPost("createteam")]
         public async Task<IActionResult> CreateTeam(CreateNewTeamDto dto)
         {
-            var result = await _programerService.CreateNewTeam(dto);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdClaim == null) return Unauthorized();
+
+            Guid userId = Guid.Parse(userIdClaim);
+
+            var result = await _programerService.CreateNewTeam(userId ,dto);
             if (result == null)
             {
                 return BadRequest("Something is wrong, try again later");

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Center | SpaidDidce</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div id="auth-screen" class="screen active">
+        <div class="auth-container">
+            <h1>Developer Center</h1>
+            <p>Accede para gestionar tus equipos y juegos</p>
+            <form id="login-form">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Contraseña" required>
+                <button type="submit" id="btn-login">Entrar al Panel</button>
+            </form>
+            <p id="auth-error" class="error"></p>
+        </div>
+    </div>
+
+    <!-- Dashboard Principal -->
+    <div id="main-screen" class="screen">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3>DevCenter</h3>
+                <span id="user-email"></span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-tab="teams-tab">Gestión de Equipos</li>
+                <li data-tab="games-tab">Crear Juego</li>
+                <li data-tab="upload-tab">Subir Versión</li>
+            </ul>
+            <button id="btn-logout" class="logout-btn">Cerrar Sesión</button>
+        </nav>
+
+        <main class="content">
+            <!-- Pestaña Equipos -->
+            <section id="teams-tab" class="tab-content active">
+                <header class="tab-header">
+                    <h2>Mis Equipos</h2>
+                    <button class="btn-primary" id="open-create-team">Nuevo Equipo</button>
+                </header>
+                <div class="form-card" id="create-team-card" style="display: none;">
+                    <h3>Crear Nuevo Equipo</h3>
+                    <input type="text" id="new-team-name" placeholder="Nombre del Equipo">
+                    <button class="btn-primary" id="btn-save-team">Guardar Equipo</button>
+                </div>
+                <div id="teams-list" class="grid-list">
+                    <p class="empty-msg">No tienes equipos creados aún.</p>
+                </div>
+            </section>
+
+            <!-- Pestaña Crear Juego -->
+            <section id="games-tab" class="tab-content">
+                <header class="tab-header">
+                    <h2>Registrar Nuevo Juego</h2>
+                </header>
+                <div class="form-card">
+                    <label>ID del Equipo Dueño (GUID)</label>
+                    <input type="text" id="game-team-id" placeholder="Copia el ID de tu equipo aquí">
+                    
+                    <label>Nombre del Juego</label>
+                    <input type="text" id="game-name" placeholder="Nombre comercial">
+                    
+                    <label>Descripción</label>
+                    <textarea id="game-desc" placeholder="Breve descripción del juego"></textarea>
+                    
+                    <label>Nombre del Ejecutable (ej: MyGame.exe)</label>
+                    <input type="text" id="game-exe" placeholder="archivo.exe">
+                    
+                    <button class="btn-primary" id="btn-create-game">Registrar Juego en Base de Datos</button>
+                </div>
+            </section>
+
+            <!-- Pestaña Subir Versión (SteamPipe Style) -->
+            <section id="upload-tab" class="tab-content">
+                <header class="tab-header">
+                    <h2>Publicar Nueva Versión</h2>
+                </header>
+                <div class="form-card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ID del Equipo</label>
+                            <input type="text" id="upload-team-id" placeholder="GUID">
+                        </div>
+                        <div class="form-group">
+                            <label>ID del Juego</label>
+                            <input type="text" id="upload-game-id" placeholder="GUID">
+                        </div>
+                    </div>
+                    
+                    <label>Descripción del Parche / Versión</label>
+                    <textarea id="upload-desc" placeholder="Ej: Fix bugs en nivel 1..."></textarea>
+                    
+                    <div class="file-selector">
+                        <button id="btn-select-file" class="btn-secondary">Seleccionar archivo .zip</button>
+                        <span id="selected-file-path">No se ha seleccionado archivo</span>
+                    </div>
+
+                    <div id="upload-progress-container" style="display: none;">
+                        <div class="progress-bar">
+                            <div id="upload-progress-fill"></div>
+                        </div>
+                        <p id="upload-status">Subiendo...</p>
+                    </div>
+
+                    <button class="btn-primary" id="btn-start-upload">Iniciar Subida al Servidor</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

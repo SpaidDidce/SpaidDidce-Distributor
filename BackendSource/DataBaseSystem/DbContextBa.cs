@@ -57,7 +57,7 @@ namespace BackendSource.DataBaseSystem
                 .IsUnique();
 
             modelBuilder.Entity<TeamProgramingDatabse>()
-                .HasIndex(x => x.GameId)
+                .HasIndex(x => x.TeamId)
                 .IsUnique();
         }
     }

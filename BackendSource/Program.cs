@@ -34,6 +34,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IKeyService, KeyService>();
 
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<IProgramerService, ProgramerService>();
 
 var dbSettings = builder.Configuration
     .GetSection("DatabaseSettings")

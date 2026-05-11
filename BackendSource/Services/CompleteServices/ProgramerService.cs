@@ -5,14 +5,12 @@ using BackendSource.DTOs.GamesDtos;
 using BackendSource.DTOs.ProgramerDtos;
 using BackendSource.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography.X509Certificates;
 
 namespace BackendSource.Services.CompleteServices
 {
     public class ProgramerService(DbContextBa context) : IProgramerService
     {
         private readonly DbContextBa _context = context;
-
 
         public async Task<TeamProgramingDatabse?> AddPlayerToTeam(Guid TeamId, AddPlayerToTeamDto dto)
         {
@@ -58,13 +56,13 @@ namespace BackendSource.Services.CompleteServices
             return newGame;
         }
 
-        public async Task<TeamProgramingDatabse?> CreateNewTeam(CreateNewTeamDto dto)
+        public async Task<TeamProgramingDatabse?> CreateNewTeam(Guid OwnerId, CreateNewTeamDto dto)
         {
             var newTeam = new TeamProgramingDatabse()
             {
                 TeamId = Guid.NewGuid(),
                 TeamName = dto.TeamName,
-                OwnerId = dto.Owner.Id,
+                OwnerId = OwnerId,
             };
 
             _context.ProgramersTeams.Add(newTeam);
@@ -75,9 +73,6 @@ namespace BackendSource.Services.CompleteServices
         public async Task<GamesTable?> updateGame(Guid TeamId, newVersionDto dto)
         {
             var game = await _context.Games.FirstOrDefaultAsync(P => P.GameId == dto.GameId);
-            
-
-
             var NewVersion = new GameVersionTable()
             {
                 GameId = game.GameId,
