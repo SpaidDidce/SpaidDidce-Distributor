@@ -1,4 +1,4 @@
-using BackendSource.DataBaseSystem;
+﻿using BackendSource.DataBaseSystem;
 using BackendSource.PermissionSystem;
 using BackendSource.seeder;
 using BackendSource.Services.APIServices;
@@ -29,17 +29,17 @@ builder.Services.Configure<FormOptions>(x =>
     x.MemoryBufferThreshold = int.MaxValue;
 });
 
-// Add services to the container.
 
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
 
 builder.Services.AddScoped<IPasswordHasher<UserTable>, PasswordHasher<UserTable>>();
+
+Stripe.StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe")["SecretKey"];
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGameService, GamesSystem>();
@@ -133,7 +133,6 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

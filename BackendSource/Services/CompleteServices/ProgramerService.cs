@@ -1,4 +1,4 @@
-using BackendSource.DataBaseSystem;
+﻿using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DataBaseSystem.Programers;
 using BackendSource.DTOs.GamesDtos;
@@ -81,7 +81,6 @@ namespace BackendSource.Services.CompleteServices
 
             if (team.UsersInTeam == null)
             {
-                // nothing
             }
             else
             {

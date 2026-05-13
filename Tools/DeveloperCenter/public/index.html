@@ -1,144 +1,222 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Developer Center | SpaidDidce</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Pantalla de Login -->
+
+    <!-- ══════════════════════════════════
+         AUTH SCREEN
+    ══════════════════════════════════ -->
     <div id="auth-screen" class="screen active">
         <div class="auth-container">
-            <h1>Developer Center</h1>
-            <p>Accede para gestionar tus equipos y juegos</p>
+            <div class="auth-logo">
+                <div class="auth-logo-icon">⚡</div>
+                <div>
+                    <h1>Developer Center</h1>
+                    <p>Sign in to manage your teams and games</p>
+                </div>
+            </div>
             <form id="login-form">
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="password" id="password" placeholder="Contraseña" required>
-                <button type="submit" id="btn-login">Entrar al Panel</button>
+                <div class="field-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="dev@studio.com" required autocomplete="off">
+                </div>
+                <div class="field-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="btn-login" class="btn-primary">Access Panel</button>
             </form>
-            <p id="auth-error" class="error"></p>
+            <p id="auth-error" class="error-msg"></p>
         </div>
     </div>
 
-    <!-- Dashboard Principal -->
+    <!-- ══════════════════════════════════
+         MAIN DASHBOARD
+    ══════════════════════════════════ -->
     <div id="main-screen" class="screen">
+
+        <!-- Sidebar -->
         <nav class="sidebar">
             <div class="sidebar-header">
-                <h3>DevCenter</h3>
-                <span id="user-email"></span>
+                <span class="sidebar-icon">⚡</span>
+                <div>
+                    <h3>DevCenter</h3>
+                    <span id="user-email">dev@studio.com</span>
+                </div>
             </div>
+
             <ul class="nav-links">
-                <li class="active" data-tab="teams-tab">Gestión de Equipos</li>
-                <li data-tab="games-tab">Crear Juego</li>
-                <li data-tab="upload-tab">Subir Versión</li>
+                <li class="active" data-tab="teams-tab">
+                    <span class="nav-icon">👥</span> Teams
+                </li>
+                <li data-tab="games-tab">
+                    <span class="nav-icon">🎮</span> Register Game
+                </li>
+                <li data-tab="upload-tab">
+                    <span class="nav-icon">🚀</span> Publish Version
+                </li>
             </ul>
-            <button id="btn-logout" class="logout-btn">Cerrar Sesión</button>
+
+            <button id="btn-logout" class="logout-btn">
+                <span>⎋</span> Sign Out
+            </button>
         </nav>
 
+        <!-- Content -->
         <main class="content">
-            <!-- Pestaña Equipos -->
+
+            <!-- ── TEAMS TAB ── -->
             <section id="teams-tab" class="tab-content active">
                 <header class="tab-header">
-                    <h2>Mis Equipos</h2>
-                    <button class="btn-primary" id="open-create-team">Nuevo Equipo</button>
+                    <div>
+                        <h2>My Teams</h2>
+                        <p class="tab-subtitle">Manage your developer teams and their permissions</p>
+                    </div>
+                    <button class="btn-primary" id="open-create-team">+ New Team</button>
                 </header>
-                <div class="form-card" id="create-team-card" style="display: none;">
-                    <h3>Crear Nuevo Equipo</h3>
-                    <input type="text" id="new-team-name" placeholder="Nombre del Equipo">
-                    <button class="btn-primary" id="btn-save-team">Guardar Equipo</button>
+
+                <div class="form-card collapse" id="create-team-card" style="display:none; margin-bottom: 24px;">
+                    <h3 class="card-title">Create New Team</h3>
+                    <div class="field-group">
+                        <label for="new-team-name">Team Name</label>
+                        <input type="text" id="new-team-name" placeholder="e.g. Pixel Forge Studio">
+                    </div>
+                    <button class="btn-primary" id="btn-save-team">Save Team</button>
                 </div>
-                <div id="teams-list" class="grid-list">
-                    <p class="empty-msg">No tienes equipos creados aún.</p>
+
+                <div id="teams-list" class="stack-list">
+                    <p class="empty-msg"><span>👥</span> You have no teams yet.</p>
                 </div>
             </section>
 
-            <!-- Pestaña Crear Juego -->
+            <!-- ── REGISTER GAME TAB ── -->
             <section id="games-tab" class="tab-content">
                 <header class="tab-header">
-                    <h2>Registrar Nuevo Juego</h2>
+                    <div>
+                        <h2>Register New Game</h2>
+                        <p class="tab-subtitle">Add a game to the platform database</p>
+                    </div>
                 </header>
+
                 <div class="form-card">
-                    <label>Seleccionar Equipo Dueño</label>
-                    <select id="game-team-id" class="team-selector-dropdown">
-                        <option value="">Cargando equipos...</option>
-                    </select>
-                    
-                    <label>Nombre del Juego</label>
-                    <input type="text" id="game-name" placeholder="Nombre comercial">
-                    
-                    <label>Descripción</label>
-                    <textarea id="game-desc" placeholder="Breve descripción del juego"></textarea>
-                    
-                    <label>Nombre del Ejecutable (ej: MyGame.exe)</label>
-                    <input type="text" id="game-exe" placeholder="archivo.exe">
-                    
+                    <h3 class="card-title">Game Details</h3>
+
+                    <div class="field-group">
+                        <label for="game-team-id">Owner Team</label>
+                        <select id="game-team-id" class="team-selector-dropdown">
+                            <option value="">Loading teams...</option>
+                        </select>
+                    </div>
+
                     <div class="form-row">
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="game-is-free" checked>
-                            <label for="game-is-free">Es gratuito</label>
+                        <div class="field-group">
+                            <label for="game-name">Game Name</label>
+                            <input type="text" id="game-name" placeholder="Commercial title">
                         </div>
-                        <div class="form-group" id="price-container" style="display: none;">
-                            <label>Precio ($)</label>
-                            <input type="number" id="game-price" value="0" step="0.01">
+                        <div class="field-group">
+                            <label for="game-exe">Executable (e.g. MyGame.exe)</label>
+                            <input type="text" id="game-exe" placeholder="game.exe">
                         </div>
                     </div>
-                    
-                    <button class="btn-primary" id="btn-create-game">Registrar Juego en Base de Datos</button>
+
+                    <div class="field-group">
+                        <label for="game-desc">Description</label>
+                        <textarea id="game-desc" placeholder="Short description of the game..."></textarea>
+                    </div>
+
+                    <div class="form-row" style="align-items:center;">
+                        <div class="field-group checkbox-group">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="game-is-free" checked>
+                                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                Free to Play
+                            </label>
+                        </div>
+                        <div class="field-group" id="price-container" style="display:none;">
+                            <label for="game-price">Price (€)</label>
+                            <input type="number" id="game-price" value="0" step="0.01" min="0">
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="btn-create-game">Register Game</button>
                 </div>
 
                 <div class="games-list-section">
-                    <h3>Juegos del Equipo</h3>
-                    <div id="team-games-list" class="games-grid">
-                        <!-- Juegos cargados dinámicamente -->
+                    <div class="section-divider">
+                        <span>Games in Selected Team</span>
                     </div>
+                    <div id="team-games-list" class="games-grid"></div>
                 </div>
             </section>
 
-            <!-- Pestaña Subir Versión (SteamPipe Style) -->
+            <!-- ── UPLOAD TAB ── -->
             <section id="upload-tab" class="tab-content">
                 <header class="tab-header">
-                    <h2>Publicar Nueva Versión</h2>
+                    <div>
+                        <h2>Publish New Version</h2>
+                        <p class="tab-subtitle">Upload a build and make it available to players</p>
+                    </div>
                 </header>
+
                 <div class="form-card">
+                    <h3 class="card-title">Build Details</h3>
+
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Seleccionar Equipo</label>
+                        <div class="field-group">
+                            <label for="upload-team-id">Team</label>
                             <select id="upload-team-id" class="team-selector-dropdown">
-                                <option value="">Cargando equipos...</option>
+                                <option value="">Loading teams...</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Seleccionar Juego</label>
+                        <div class="field-group">
+                            <label for="upload-game-id">Game</label>
                             <select id="upload-game-id" class="game-selector-dropdown">
-                                <option value="">Selecciona un equipo primero...</option>
+                                <option value="">Select a team first...</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Versión (ej: 1.0.0)</label>
-                            <input type="text" id="upload-version" placeholder="1.0.0">
+                        <div class="field-group">
+                            <label for="upload-version">Version Tag</label>
+                            <input type="text" id="upload-version" placeholder="e.g. 1.0.0">
                         </div>
                     </div>
-                    
-                    <label>Descripción de los cambios</label>
-                    <textarea id="upload-desc" placeholder="¿Qué hay de nuevo en esta versión?"></textarea>
-                    
-                    <div class="file-selector">
-                        <button id="btn-select-file" class="btn-secondary">Seleccionar archivo .zip</button>
-                        <span id="selected-file-path">No se ha seleccionado archivo</span>
+
+                    <div class="field-group">
+                        <label for="upload-desc">Changelog / What's New</label>
+                        <textarea id="upload-desc" placeholder="Describe what's new in this version..."></textarea>
                     </div>
 
-                    <div id="upload-progress-container" style="display: none;">
-                        <div class="progress-bar">
-                            <div id="upload-progress-fill"></div>
+                    <div class="file-drop-zone" id="file-drop-zone">
+                        <div class="file-drop-inner">
+                            <span class="file-drop-icon">📦</span>
+                            <p>Drop your <strong>.zip</strong> build here</p>
+                            <span>or</span>
+                            <button id="btn-select-file" class="btn-secondary">Browse File</button>
                         </div>
-                        <p id="upload-status">Subiendo...</p>
+                        <p id="selected-file-path" class="selected-file-label">No file selected</p>
                     </div>
 
-                    <button class="btn-primary" id="btn-start-upload">Iniciar Subida al Servidor</button>
+                    <div id="upload-progress-container" style="display:none;" class="progress-section">
+                        <div class="progress-header">
+                            <span id="upload-status">Uploading...</span>
+                            <span id="upload-percent">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="upload-progress-fill" class="progress-bar-fill"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="btn-start-upload">🚀 Publish to Server</button>
                 </div>
             </section>
+
         </main>
     </div>
 

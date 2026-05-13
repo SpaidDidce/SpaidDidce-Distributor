@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BackendSource.Migrations
 {
     /// <inheritdoc />
-    public partial class tables : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,10 +17,12 @@ namespace BackendSource.Migrations
                 columns: table => new
                 {
                     GameId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TeamId = table.Column<Guid>(type: "uuid", nullable: false),
                     GameName = table.Column<string>(type: "text", nullable: false),
                     GameDescription = table.Column<string>(type: "text", nullable: false),
                     ExeName = table.Column<string>(type: "text", nullable: false),
                     GameIsPublic = table.Column<bool>(type: "boolean", nullable: false),
+                    GameItsFree = table.Column<bool>(type: "boolean", nullable: false),
                     Price = table.Column<float>(type: "real", nullable: false)
                 },
                 constraints: table =>
@@ -87,6 +89,7 @@ namespace BackendSource.Migrations
                     GameId = table.Column<List<Guid>>(type: "uuid[]", nullable: true),
                     TeamName = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ItsRevoked = table.Column<bool>(type: "boolean", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RevokedReason = table.Column<int>(type: "integer", nullable: true),
                     OwnerId = table.Column<Guid>(type: "uuid", nullable: false)

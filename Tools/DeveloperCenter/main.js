@@ -1,14 +1,12 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 
-// Fix para electron-store en CommonJS
 let store;
 (async () => {
     const Store = (await import('electron-store')).default;
     store = new Store();
 })();
 
-// Desactivar validación de certificados para desarrollo (Localhost)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 let mainWindow;
@@ -17,7 +15,7 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1100,
         height: 750,
-        backgroundColor: '#0f111a',
+        backgroundColor: '#070711',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -25,8 +23,8 @@ function createWindow() {
         },
         titleBarStyle: 'hidden',
         titleBarOverlay: {
-            color: '#0f111a',
-            symbolColor: '#ffffff'
+            color: '#070711',
+            symbolColor: '#c4b5fd'
         }
     });
 
@@ -41,7 +39,6 @@ app.on('window-all-closed', () => {
 
 const API_URL = 'https://localhost:7045';
 
-// --- Auth Handlers (Reutilizados del Launcher) ---
 ipcMain.handle('api:login', async (event, email, password) => {
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
@@ -77,10 +74,10 @@ ipcMain.handle('auth:refresh-session', async () => {
             const data = await response.json();
             store.set('auth.accessToken', data.accessToken);
             store.set('auth.refreshToken', data.refreshToken);
-            console.log("Sesión renovada automáticamente.");
+            console.log("Session refreshed automatically.");
             return { success: true };
         } else {
-            console.log("Sesión expirada, limiando credenciales.");
+            console.log("Session expired, clearing credentials.");
             store.clear();
             return { success: false };
         }
@@ -89,7 +86,6 @@ ipcMain.handle('auth:refresh-session', async () => {
     }
 });
 
-// --- Developer Center Handlers ---
 
 ipcMain.handle('api:create-team', async (event, teamName) => {
     const token = store.get('auth.accessToken');
@@ -155,9 +151,8 @@ ipcMain.handle('api:upload-game', async (event, { teamId, gameId, version, fileP
 
         return { success: true, data: response.data };
     } catch (err) {
-        console.error("Error en upload-game (Axios):", err.message);
+        console.error("Upload error (Axios):", err.message);
         if (err.response) {
-            // El servidor respondió con un error (400, 500, etc)
             const errorMsg = typeof err.response.data === 'string' 
                 ? err.response.data 
                 : JSON.stringify(err.response.data);
@@ -167,7 +162,6 @@ ipcMain.handle('api:upload-game', async (event, { teamId, gameId, version, fileP
     }
 });
 
-// Selector de archivos para la subida
 ipcMain.handle('dialog:open-file', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ['openFile'],
@@ -229,10 +223,10 @@ ipcMain.handle('api:delete-team', async (event, teamId) => {
         }
         
         const errorText = await response.text();
-        console.log(`Error en Backend (Status ${response.status}): ${errorText}`);
+        console.log(`Backend error (Status ${response.status}): ${errorText}`);
         return { success: false, error: errorText || `Error ${response.status}` };
     } catch (err) {
-        console.error(`Error de red: ${err.message}`);
+        console.error(`Network error: ${err.message}`);
         return { success: false, error: err.message };
     }
 });
@@ -241,7 +235,7 @@ ipcMain.handle('api:public-game', async (event, teamId, gameId) => {
     const token = store.get('auth.accessToken');
     try {
         const response = await fetch(`${API_URL}/Programer/publicgame?TeamId=${teamId}`, {
-            method: 'POST', // Cambiado a POST
+            method: 'POST',
             headers: { 
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json' 

@@ -1,4 +1,4 @@
-using BackendSource.DataBaseSystem;
+﻿using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DTOs.GamesDtos;
 using BackendSource.Services.APIServices;
@@ -108,7 +108,6 @@ namespace BackendSource.Systems
 
             if (latest.Count == 0) return null;
 
-            // Usamos el comparador oficial de la librería para evitar errores de IComparable
             return latest.OrderByDescending(v => SemVersion.Parse(v.Version), SemVersion.PrecedenceComparer).FirstOrDefault();
         }
         

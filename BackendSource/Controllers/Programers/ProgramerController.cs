@@ -1,4 +1,4 @@
-using BackendSource.DTOs.GamesDtos;
+﻿using BackendSource.DTOs.GamesDtos;
 using BackendSource.DTOs.ProgramerDtos;
 using BackendSource.Security;
 using BackendSource.Services.Interfaces;
@@ -28,7 +28,7 @@ namespace BackendSource.Controllers.Programers
             var gameFile = Request.Form.Files.FirstOrDefault();
 
             if (gameFile == null || gameFile.Length == 0)
-                return BadRequest("No se ha enviado ningún archivo o el archivo está vacío.");
+                return BadRequest("No se ha enviado ningÃºn archivo o el archivo estÃ¡ vacÃ­o.");
 
             if (!gameFile.FileName.EndsWith(".zip"))
                 return BadRequest("Solo se admiten archivos .zip");
@@ -42,7 +42,6 @@ namespace BackendSource.Controllers.Programers
                 await gameFile.CopyToAsync(stream);
             }
 
-            // Registrar en la base de datos
             var updateResult = await _programerService.updateGame(TeamId, new newVersionDto
             {
                 GameId = Gameid,
@@ -52,9 +51,9 @@ namespace BackendSource.Controllers.Programers
             });
 
             if (updateResult == null)
-                return BadRequest("El archivo se subió pero no se pudo registrar la versión en la DB.");
+                return BadRequest("El archivo se subiÃ³ pero no se pudo registrar la versiÃ³n en la DB.");
 
-            return Ok(new { message = "Juego subido y registrado con éxito", fileSize = gameFile.Length });
+            return Ok(new { message = "Juego subido y registrado con Ã©xito", fileSize = gameFile.Length });
         }
 
         [Authorize]

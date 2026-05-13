@@ -1,29 +1,23 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    // --- Referencias UI ---
-    const authScreen = document.getElementById('auth-screen');
-    const mainScreen = document.getElementById('main-screen');
-    const loginForm = document.getElementById('login-form');
-    const authError = document.getElementById('auth-error');
+﻿document.addEventListener('DOMContentLoaded', async () => {
+    const authScreen    = document.getElementById('auth-screen');
+    const mainScreen    = document.getElementById('main-screen');
+    const loginForm     = document.getElementById('login-form');
+    const authError     = document.getElementById('auth-error');
     const userEmailSpan = document.getElementById('user-email');
-    const btnLogout = document.getElementById('btn-logout');
+    const btnLogout     = document.getElementById('btn-logout');
+    const navLinks      = document.querySelectorAll('.nav-links li');
+    const tabContents   = document.querySelectorAll('.tab-content');
 
-    const navLinks = document.querySelectorAll('.nav-links li');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    // --- Lógica de Navegación ---
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
             const targetTab = link.getAttribute('data-tab');
-
             navLinks.forEach(l => l.classList.remove('active'));
             tabContents.forEach(t => t.classList.remove('active'));
-
             link.classList.add('active');
             document.getElementById(targetTab).classList.add('active');
         });
     });
 
-    // --- Gestión de Sesión ---
     const checkAuth = async () => {
         const email = await window.devAPI.getEmail();
         if (email) {
@@ -36,14 +30,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
-        const pass = document.getElementById('password').value;
+        const pass  = document.getElementById('password').value;
+        const btn   = document.getElementById('btn-login');
+
+        btn.textContent = 'Signing in...';
+        btn.disabled    = true;
+        authError.textContent = '';
 
         const res = await window.devAPI.login(email, pass);
         if (res.success) {
             await checkAuth();
             await loadTeams();
         } else {
-            authError.textContent = res.error || 'Credenciales inválidas';
+            authError.textContent = res.error || 'Invalid credentials';
+            btn.textContent = 'Access Panel';
+            btn.disabled    = false;
         }
     });
 
@@ -52,35 +53,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         location.reload();
     });
 
-    // --- Crear Equipo ---
-    const btnSaveTeam = document.getElementById('btn-save-team');
+    const btnSaveTeam    = document.getElementById('btn-save-team');
     const openCreateTeam = document.getElementById('open-create-team');
     const createTeamCard = document.getElementById('create-team-card');
 
     openCreateTeam.addEventListener('click', () => {
-        createTeamCard.style.display = createTeamCard.style.display === 'none' ? 'block' : 'none';
+        const isVisible = createTeamCard.style.display !== 'none';
+        createTeamCard.style.display = isVisible ? 'none' : 'block';
+        openCreateTeam.textContent   = isVisible ? '+ New Team' : 'âœ• Cancel';
     });
 
     btnSaveTeam.addEventListener('click', async () => {
-        const name = document.getElementById('new-team-name').value;
-        if (!name) return alert('El nombre es obligatorio');
+        const name = document.getElementById('new-team-name').value.trim();
+        if (!name) return alert('Team name is required');
+
+        btnSaveTeam.textContent = 'Saving...';
+        btnSaveTeam.disabled    = true;
 
         const res = await window.devAPI.createTeam(name);
         if (res.success) {
-            alert('Equipo creado con éxito. Copia el ID desde la consola o DB.');
             document.getElementById('new-team-name').value = '';
             createTeamCard.style.display = 'none';
+            openCreateTeam.textContent   = '+ New Team';
+            await loadTeams();
         } else {
             alert('Error: ' + res.message);
         }
+        btnSaveTeam.textContent = 'Save Team';
+        btnSaveTeam.disabled    = false;
     });
 
-    // --- Registrar Juego ---
-    const btnCreateGame = document.getElementById('btn-create-game');
-    const selectGameTeam = document.getElementById('game-team-id');
-    const teamGamesList = document.getElementById('team-games-list');
-    const checkIsFree = document.getElementById('game-is-free');
-    const priceContainer = document.getElementById('price-container');
+    const btnCreateGame   = document.getElementById('btn-create-game');
+    const selectGameTeam  = document.getElementById('game-team-id');
+    const teamGamesList   = document.getElementById('team-games-list');
+    const checkIsFree     = document.getElementById('game-is-free');
+    const priceContainer  = document.getElementById('price-container');
 
     if (checkIsFree) {
         checkIsFree.addEventListener('change', () => {
@@ -89,27 +96,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const loadGamesForTeam = async (teamId) => {
-        if (!teamId) {
-            teamGamesList.innerHTML = '';
-            return;
-        }
+        if (!teamId) { teamGamesList.innerHTML = ''; return; }
+
+        teamGamesList.innerHTML = '<p class="empty-msg"><span>â³</span> Loading games...</p>';
         const res = await window.devAPI.getGamesForTeam(teamId);
+
         if (res.success) {
             const games = res.data;
             if (games.length === 0) {
-                teamGamesList.innerHTML = '<p class="empty-msg">Este equipo no tiene juegos registrados.</p>';
+                teamGamesList.innerHTML = '<p class="empty-msg"><span>ðŸŽ®</span> This team has no registered games yet.</p>';
                 return;
             }
             teamGamesList.innerHTML = games.map(game => `
                 <div class="game-card ${game.gameIsPublic ? 'public' : 'private'}">
                     <div class="game-info">
                         <strong>${game.gameName}</strong>
-                        <span class="game-price-tag">${game.itsFree ? 'GRATIS' : `$${game.price}`}</span>
+                        <span class="game-price-tag ${game.itsFree ? 'free' : ''}">${game.itsFree ? 'FREE' : `â‚¬${game.price}`}</span>
                         <code class="mini-id">${game.gameId}</code>
                     </div>
-                    <div class="game-actions">
-                        <button onclick="copyToClipboard('${game.gameId}')" class="btn-icon" title="Copiar ID">📋</button>
-                        <button onclick="setGamePublic('${teamId}', '${game.gameId}')" class="btn-icon" title="Visibilidad">🌐</button>
+                    <div class="team-actions">
+                        <button onclick="copyToClipboard('${game.gameId}')" class="btn-icon" title="Copy ID">ðŸ“‹</button>
+                        <button onclick="setGamePublic('${teamId}', '${game.gameId}')" class="btn-icon" title="Toggle Visibility">ðŸŒ</button>
                     </div>
                 </div>
             `).join('');
@@ -123,43 +130,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.setGamePublic = async (teamId, gameId) => {
         const res = await window.devAPI.publicGame(teamId, gameId);
         if (res.success) {
-            alert('Estado de visibilidad actualizado');
             loadGamesForTeam(teamId);
         } else {
-            alert('Error al actualizar visibilidad');
+            alert('Failed to update visibility');
         }
     };
 
     btnCreateGame.addEventListener('click', async () => {
-        const teamId = selectGameTeam.value;
+        const teamId   = selectGameTeam.value;
         const gameData = {
-            GameName: document.getElementById('game-name').value,
-            GameDescription: document.getElementById('game-desc').value,
-            ExeName: document.getElementById('game-exe').value,
-            ItsFree: checkIsFree.checked,
-            Price: parseFloat(document.getElementById('game-price').value || 0)
+            GameName:        document.getElementById('game-name').value.trim(),
+            GameDescription: document.getElementById('game-desc').value.trim(),
+            ExeName:         document.getElementById('game-exe').value.trim(),
+            ItsFree:         checkIsFree.checked,
+            Price:           parseFloat(document.getElementById('game-price').value || 0)
         };
 
-        if (!teamId || !gameData.GameName) return alert('Equipo y nombre son obligatorios');
+        if (!teamId || !gameData.GameName) return alert('Team and game name are required');
+
+        btnCreateGame.textContent = 'Registering...';
+        btnCreateGame.disabled    = true;
 
         const res = await window.devAPI.createGame(teamId, gameData);
-        alert(res.message || 'Juego procesado');
+        alert(res.message || 'Game processed');
         if (res.success) loadGamesForTeam(teamId);
+
+        btnCreateGame.textContent = 'Register Game';
+        btnCreateGame.disabled    = false;
     });
 
-    // --- Subida de Archivos ---
     let selectedFilePath = null;
-    const btnSelectFile = document.getElementById('btn-select-file');
-    const pathLabel = document.getElementById('selected-file-path');
-    const btnStartUpload = document.getElementById('btn-start-upload');
-    const progressContainer = document.getElementById('upload-progress-container');
-    const progressFill = document.getElementById('upload-progress-fill');
+    const btnSelectFile       = document.getElementById('btn-select-file');
+    const pathLabel           = document.getElementById('selected-file-path');
+    const btnStartUpload      = document.getElementById('btn-start-upload');
+    const progressContainer   = document.getElementById('upload-progress-container');
+    const progressFill        = document.getElementById('upload-progress-fill');
+    const uploadStatus        = document.getElementById('upload-status');
+    const uploadPercent       = document.getElementById('upload-percent');
+    const fileDropZone        = document.getElementById('file-drop-zone');
 
     btnSelectFile.addEventListener('click', async () => {
-        const path = await window.devAPI.openFile();
-        if (path) {
-            selectedFilePath = path;
-            pathLabel.textContent = path;
+        const filePath = await window.devAPI.openFile();
+        if (filePath) {
+            selectedFilePath   = filePath;
+            pathLabel.textContent = filePath.split(/[\\/]/).pop(); // show only filename
+            pathLabel.title    = filePath;
+            fileDropZone.classList.add('drag-over');
+            setTimeout(() => fileDropZone.classList.remove('drag-over'), 600);
         }
     });
 
@@ -169,143 +186,134 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectUploadTeam.addEventListener('change', async (e) => {
         const teamId = e.target.value;
         if (!teamId) {
-            selectUploadGame.innerHTML = '<option value="">Selecciona un equipo primero...</option>';
+            selectUploadGame.innerHTML = '<option value="">Select a team first...</option>';
             return;
         }
-        
-        selectUploadGame.innerHTML = '<option value="">Cargando juegos...</option>';
+        selectUploadGame.innerHTML = '<option value="">Loading games...</option>';
         const res = await window.devAPI.getGamesForTeam(teamId);
         if (res.success) {
-            if (res.data.length === 0) {
-                selectUploadGame.innerHTML = '<option value="">Sin juegos en este equipo</option>';
-            } else {
-                selectUploadGame.innerHTML = res.data.map(g => 
-                    `<option value="${g.gameId}">${g.gameName}</option>`
-                ).join('');
-            }
+            selectUploadGame.innerHTML = res.data.length === 0
+                ? '<option value="">No games in this team</option>'
+                : res.data.map(g => `<option value="${g.gameId}">${g.gameName}</option>`).join('');
         } else {
-            selectUploadGame.innerHTML = '<option value="">Error al cargar juegos</option>';
+            selectUploadGame.innerHTML = '<option value="">Error loading games</option>';
         }
     });
 
     btnStartUpload.addEventListener('click', async () => {
-        const teamId = selectUploadTeam.value;
-        const gameId = selectUploadGame.value;
-        const version = document.getElementById('upload-version').value;
-        const desc = document.getElementById('upload-desc').value;
+        const teamId  = selectUploadTeam.value;
+        const gameId  = selectUploadGame.value;
+        const version = document.getElementById('upload-version').value.trim();
+        const desc    = document.getElementById('upload-desc').value.trim();
 
         if (!selectedFilePath || !teamId || !gameId || !version) {
-            return alert('Completa todos los campos (equipo, juego, versión y archivo)');
+            return alert('Please fill in all fields: team, game, version, and file.');
         }
 
         progressContainer.style.display = 'block';
-        btnStartUpload.disabled = true;
+        btnStartUpload.disabled         = true;
+        uploadStatus.textContent        = 'Uploading...';
+        progressFill.style.width        = '0%';
+        if (uploadPercent) uploadPercent.textContent = '0%';
 
-        const res = await window.devAPI.uploadGame({
-            teamId,
-            gameId,
-            version: document.getElementById('upload-version').value,
-            filePath: selectedFilePath,
-            description: desc
-        });
+        const res = await window.devAPI.uploadGame({ teamId, gameId, version, filePath: selectedFilePath, description: desc });
 
         if (res.success) {
-            alert('¡Versión publicada con éxito!');
-            progressContainer.style.display = 'none';
-            btnStartUpload.disabled = false;
-            // location.reload(); // Evitar recarga si queremos seguir interactuando
+            progressFill.style.width = '100%';
+            if (uploadPercent) uploadPercent.textContent = '100%';
+            uploadStatus.textContent = 'âœ“ Published!';
+            uploadStatus.style.color = 'var(--success)';
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                uploadStatus.style.color = '';
+            }, 2500);
         } else {
-            alert('Error en la subida: ' + res.error);
-            progressContainer.style.display = 'none';
-            btnStartUpload.disabled = false;
+            uploadStatus.textContent = 'âœ• Upload failed: ' + res.error;
+            uploadStatus.style.color = 'var(--error)';
         }
+        btnStartUpload.disabled = false;
     });
 
-    // --- Cargar Equipos ---
     const teamsList = document.getElementById('teams-list');
 
-    const getRevokedReasonText = (reasonCode) => {
+    const getRevokedReasonText = (code) => {
         const reasons = {
-            0: "Virus detectado",
-            1: "Eliminado por el usuario",
-            2: "Baneado por administración",
-            3: "Equipo disuelto"
+            0: 'Malware detected',
+            1: 'Deleted by user',
+            2: 'Banned by administration',
+            3: 'Team dissolved'
         };
-        return reasons[reasonCode] || "Violación de términos";
+        return reasons[code] ?? 'Terms of service violation';
     };
 
     const loadTeams = async () => {
+        teamsList.innerHTML = '<p class="empty-msg"><span>â³</span> Loading teams...</p>';
         const res = await window.devAPI.getTeams();
-        if (res.success) {
-            const teams = res.data;
-            
-            // Rellenar los dropdowns de selección de equipo
-            const dropdowns = document.querySelectorAll('.team-selector-dropdown');
-            dropdowns.forEach(dropdown => {
-                const activeTeams = teams.filter(t => !t.itsRevoked);
-                if (activeTeams.length === 0) {
-                    dropdown.innerHTML = '<option value="">No tienes equipos activos</option>';
-                } else {
-                    dropdown.innerHTML = activeTeams.map(t => 
-                        `<option value="${t.teamId}">${t.teamName}</option>`
-                    ).join('');
-                }
-            });
-
-            if (!teams || teams.length === 0) {
-                teamsList.innerHTML = '<p class="empty-msg">No tienes equipos creados aún.</p>';
-                return;
-            }
-
-            teamsList.innerHTML = teams.map(team => `
-                <div class="team-card ${team.itsRevoked ? 'revoked' : ''}">
-                    <div class="team-info">
-                        <h4>
-                            ${team.teamName} 
-                            ${team.itsRevoked ? '<span class="badge-revoked">REVOCADO</span>' : ''}
-                        </h4>
-                        <span class="team-id">ID: ${team.teamId}</span>
-                        ${team.itsRevoked ? `<p class="revoked-reason">Motivo: ${getRevokedReasonText(team.revokedReason)}</p>` : ''}
-                    </div>
-                    <div class="team-actions">
-                        <button onclick="copyToClipboard('${team.teamId}')" title="Copiar ID" class="btn-icon">📋</button>
-                        ${!team.itsRevoked ? `<button onclick="changeName('${team.teamId}')" title="Cambiar Nombre" class="btn-icon">✏️</button>` : ''}
-                        <button onclick="confirmDeleteTeam('${team.teamId}')" title="Borrar Equipo" class="btn-icon btn-delete">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
+        if (!res.success) {
+            teamsList.innerHTML = '<p class="empty-msg"><span>ðŸ”Œ</span> Failed to load teams.</p>';
+            return;
         }
+
+        const teams = res.data;
+
+        document.querySelectorAll('.team-selector-dropdown').forEach(dropdown => {
+            const active = teams.filter(t => !t.itsRevoked);
+            dropdown.innerHTML = active.length === 0
+                ? '<option value="">No active teams</option>'
+                : active.map(t => `<option value="${t.teamId}">${t.teamName}</option>`).join('');
+        });
+
+        if (!teams || teams.length === 0) {
+            teamsList.innerHTML = '<p class="empty-msg"><span>ðŸ‘¥</span> You have no teams yet.</p>';
+            return;
+        }
+
+        teamsList.innerHTML = teams.map(team => `
+            <div class="team-card ${team.itsRevoked ? 'revoked' : ''}">
+                <div class="team-info">
+                    <h4>
+                        ${team.teamName}
+                        ${team.itsRevoked ? '<span class="badge-revoked">Revoked</span>' : ''}
+                    </h4>
+                    <span class="team-id">ID: ${team.teamId}</span>
+                    ${team.itsRevoked ? `<p class="revoked-reason">Reason: ${getRevokedReasonText(team.revokedReason)}</p>` : ''}
+                </div>
+                <div class="team-actions">
+                    <button onclick="copyToClipboard('${team.teamId}')" title="Copy ID" class="btn-icon">ðŸ“‹</button>
+                    ${!team.itsRevoked ? `<button onclick="changeName('${team.teamId}')" title="Rename" class="btn-icon">âœï¸</button>` : ''}
+                    <button onclick="confirmDeleteTeam('${team.teamId}')" title="Dissolve Team" class="btn-icon btn-delete">ðŸ—‘ï¸</button>
+                </div>
+            </div>
+        `).join('');
     };
 
     window.confirmDeleteTeam = async (id) => {
-        if (confirm('¿Estás seguro de que quieres disolver este equipo? Los juegos asociados dejarán de ser públicos.')) {
+        if (confirm('Are you sure you want to dissolve this team? Associated games will be unpublished.')) {
             const res = await window.devAPI.deleteTeam(id);
             if (res.success) {
-                alert('Equipo disuelto con éxito');
-                loadTeams();
+                await loadTeams();
             } else {
-                alert('Error al borrar: ' + res.error);
+                alert('Failed to delete: ' + res.error);
             }
         }
     };
 
     window.copyToClipboard = (text) => {
         navigator.clipboard.writeText(text);
-        alert('ID copiado al portapapeles');
     };
 
     window.changeName = async (id) => {
-        const newName = prompt('Introduce el nuevo nombre del equipo:');
-        if (newName) {
-            const res = await window.devAPI.changeTeamName(id, newName);
+        const newName = prompt('Enter the new team name:');
+        if (newName && newName.trim()) {
+            const res = await window.devAPI.changeTeamName(id, newName.trim());
             alert(res.message);
             loadTeams();
         }
     };
 
-    // Inicialización
-    if (await window.devAPI.getEmail()) {
-        await window.devAPI.refreshSession(); // Renovar sesión al arrancar
+    const savedEmail = await window.devAPI.getEmail();
+    if (savedEmail) {
+        await window.devAPI.refreshSession();
         await checkAuth();
         await loadTeams();
     }

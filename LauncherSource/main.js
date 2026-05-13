@@ -1,23 +1,21 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+﻿const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { pipeline } = require('stream/promises');
 
-// IGNORAR ERRORES DE CERTIFICADOS HTTPS PARA DESARROLLO LOCAL
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-// Variable global para el store
 let store;
 
 function createWindow() {
     const win = new BrowserWindow({
         width: 1000,
         height: 700,
-        backgroundColor: '#0a0a0a', // Evita parpadeos blancos al cargar
+        backgroundColor: '#0a0a0a', // Prevents white flicker on load
         webPreferences: {
-            nodeIntegration: false, // ¡IMPORTANTE PARA SEGURIDAD!
-            contextIsolation: true, // ¡IMPORTANTE PARA SEGURIDAD!
+            nodeIntegration: false, // IMPORTANT FOR SECURITY
+            contextIsolation: true, // IMPORTANT FOR SECURITY
             preload: path.join(__dirname, 'preload.js')
         }
     });
@@ -26,10 +24,8 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-    // Importamos electron-store de forma asíncrona (requerido para versiones modernas ESM)
     const { default: Store } = await import('electron-store');
 
-    // Inicializamos el almacenamiento seguro
     store = new Store({
         encryptionKey: 'mi-clave-secreta-super-segura-del-launcher'
     });
@@ -49,14 +45,11 @@ app.on('window-all-closed', () => {
     }
 });
 
-// ==========================================
-// IPC HANDLERS: Comunicación Frontend <-> Backend Local
-// ==========================================
 
-const API_URL = 'https://localhost:7045'; // URL de tu Backend (revisado en launchSettings.json)
+const API_URL = 'https://localhost:7045'; // Backend URL (see launchSettings.json)
 
 ipcMain.handle('api:register', async (event, username, email, password) => {
-    console.log(`Intentando registro para: ${email}`);
+    console.log(`Attempting registration for: ${email}`);
 
     try {
         const response = await fetch(`${API_URL}/auth/register`, {
@@ -74,21 +67,20 @@ ipcMain.handle('api:register', async (event, username, email, password) => {
                     store.set('auth.email', email);
                 }
             } catch (e) {
-                // Por si el backend no devuelve un JSON válido
             }
             return { success: true, email: email };
         } else {
             const errorText = await response.text();
-            return { success: false, error: errorText || 'Error al registrarse' };
+            return { success: false, error: errorText || 'Registration failed' };
         }
     } catch (err) {
         console.error(err);
-        return { success: false, error: 'No se pudo conectar con el servidor' };
+        return { success: false, error: 'Could not connect to the server' };
     }
 });
 
 ipcMain.handle('api:login', async (event, email, password) => {
-    console.log(`Intentando login real para: ${email}`);
+    console.log(`Attempting login for: ${email}`);
 
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
@@ -99,23 +91,21 @@ ipcMain.handle('api:login', async (event, email, password) => {
 
         if (response.ok) {
             const data = await response.json();
-            // Guardamos el token y el email localmente
             store.set('auth.accessToken', data.accessToken);
             store.set('auth.refreshToken', data.refreshToken);
             store.set('auth.email', email);
             return { success: true, email: email };
         } else {
             const errorText = await response.text();
-            return { success: false, error: errorText || 'Credenciales incorrectas' };
+            return { success: false, error: errorText || 'Invalid credentials' };
         }
     } catch (err) {
         console.error(err);
-        return { success: false, error: 'No se pudo conectar con el servidor (¿Está apagado?)' };
+        return { success: false, error: 'Could not connect to the server (is it running?)' };
     }
 });
 
 ipcMain.handle('api:getSessionStatus', async () => {
-    // Verificamos si tenemos un token guardado
     const refreshToken = store.get('auth.refreshToken');
     const email = store.get('auth.email');
 
@@ -139,10 +129,10 @@ ipcMain.handle('api:refresh-session', async () => {
             const data = await response.json();
             store.set('auth.accessToken', data.accessToken);
             store.set('auth.refreshToken', data.refreshToken);
-            console.log("Sesión de jugador renovada.");
+            console.log("Player session refreshed.");
             return { success: true };
         } else {
-            console.log("Sesión expirada, cerrando...");
+            console.log("Session expired, clearing tokens...");
             store.delete('auth.accessToken');
             store.delete('auth.refreshToken');
             store.delete('auth.email');
@@ -160,12 +150,10 @@ ipcMain.handle('api:logout', async () => {
         try {
             await fetch(`${API_URL}/auth/logout`, {
                 method: 'GET',
-                // Tu AuthController espera el refresh_token en las cabeceras
                 headers: { 'refresh_token': token }
             });
         } catch (err) {
-            console.error("Error desconectando del backend:", err);
-            // Ignoramos el error para forzar el cierre de sesión local de todos modos
+            console.error("Error disconnecting from backend:", err);
         }
     }
 
@@ -175,9 +163,6 @@ ipcMain.handle('api:logout', async () => {
     return { success: true };
 });
 
-// ==========================================
-// IPC HANDLERS: Biblioteca de Juegos
-// ==========================================
 
 function getAuthHeaders() {
     const token = store.get('auth.accessToken');
@@ -193,7 +178,7 @@ ipcMain.handle('api:getPublicGames', async () => {
         if (response.ok) return { success: true, games: await response.json() };
         return { success: false, error: await response.text() };
     } catch (err) {
-        return { success: false, error: 'Error de conexión.' };
+        return { success: false, error: 'Connection error.' };
     }
 });
 
@@ -203,7 +188,7 @@ ipcMain.handle('api:getMyLibrary', async () => {
         if (response.ok) return { success: true, games: await response.json() };
         return { success: false, error: await response.text() };
     } catch (err) {
-        return { success: false, error: 'Error de conexión.' };
+        return { success: false, error: 'Connection error.' };
     }
 });
 
@@ -212,12 +197,12 @@ ipcMain.handle('api:buyGame', async (event, gameId) => {
         const response = await fetch(`${API_URL}/Me`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify(gameId) // Enviamos el GUID directamente
+            body: JSON.stringify(gameId) // Send the GUID directly
         });
         if (response.ok) return { success: true };
         return { success: false, error: await response.text() };
     } catch (err) {
-        return { success: false, error: 'Error de conexión.' };
+        return { success: false, error: 'Connection error.' };
     }
 });
 
@@ -231,7 +216,7 @@ ipcMain.handle('api:searchGame', async (event, name) => {
         if (response.ok) return { success: true, games: await response.json() };
         return { success: false, error: await response.text() };
     } catch (err) {
-        return { success: false, error: 'Error de conexión.' };
+        return { success: false, error: 'Connection error.' };
     }
 });
 
@@ -241,13 +226,12 @@ ipcMain.handle('api:getLatestDescription', async (event, gameId) => {
         if (response.ok) return { success: true, description: await response.text() };
         return { success: false, error: await response.text() };
     } catch (err) {
-        return { success: false, error: 'Error de conexión.' };
+        return { success: false, error: 'Connection error.' };
     }
 });
 
 ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
     try {
-        // Enviar evento de inicio al renderer
         event.sender.send('download-progress', { status: 'starting', percent: 0 });
 
         const response = await fetch(`${API_URL}/games/${gameId}/latest/download`, { headers: getAuthHeaders() });
@@ -256,8 +240,6 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
             return { success: false, error: await response.text() };
         }
 
-        // Obtener nombre del archivo de la cabecera (o genérico si no lo manda el backend)
-        // Obtener nombre del archivo de la cabecera de forma más robusta
         const contentDisposition = response.headers.get('content-disposition');
         let filename = `${gameId}-latest.zip`;
         
@@ -265,7 +247,7 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
             const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
             const matches = filenameRegex.exec(contentDisposition);
             if (matches != null && matches[1]) {
-                filename = matches[1].replace(/["']/g, '').split(';')[0].trim();
+                filename = matches[1].replace(/[\"']/g, '').split(';')[0].trim();
             }
         }
 
@@ -278,7 +260,6 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
 
         const fileStream = fs.createWriteStream(finalPath);
 
-        // Transform stream para calcular el progreso
         const { Transform } = require('stream');
         let lastPercent = 0;
         const progressStream = new Transform({
@@ -286,7 +267,6 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
                 downloadedBytes += chunk.length;
                 if (totalBytes > 0) {
                     const percent = Math.round((downloadedBytes / totalBytes) * 100);
-                    // Enviamos progreso solo si cambia para no saturar el IPC
                     if (percent !== lastPercent) {
                         lastPercent = percent;
                         event.sender.send('download-progress', { status: 'downloading', percent, downloadedBytes, totalBytes });
@@ -296,47 +276,41 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
             }
         });
 
-        // Usar pipeline nativo de stream Web/Node compatible
         const { Readable } = require('stream');
         let nodeReadable;
         
         try {
             nodeReadable = Readable.fromWeb(response.body);
         } catch (e) {
-            // Fallback para versiones de Node que no tengan fromWeb o tengan problemas
             nodeReadable = response.body; 
         }
 
         await pipeline(nodeReadable, progressStream, fileStream);
 
-        // --- INICIO DE DESCOMPRESIÓN ---
         try {
             event.sender.send('download-progress', { status: 'extracting', percent: 100 });
             const AdmZip = require('adm-zip');
             const zip = new AdmZip(finalPath);
             
-            // Usamos el gameId para el nombre de la carpeta (estilo Steam)
             const extractPath = path.join(downloadDir, gameId);
             if (!fs.existsSync(extractPath)) fs.mkdirSync(extractPath, { recursive: true });
             
             zip.extractAllTo(extractPath, true);
-            console.log(`Juego extraído en: ${extractPath}`);
+            console.log(`Game extracted to: ${extractPath}`);
             
-            // Borramos el ZIP original
             fs.unlinkSync(finalPath);
 
             event.sender.send('download-progress', { status: 'completed', percent: 100, path: extractPath });
             return { success: true, path: extractPath };
         } catch (unzipErr) {
-            console.error("Error al descomprimir:", unzipErr);
-            return { success: false, error: 'Descarga completa, pero falló la descompresión.' };
+            console.error("Extraction error:", unzipErr);
+            return { success: false, error: 'Download complete, but extraction failed.' };
         }
-        // --- FIN DE DESCOMPRESIÓN ---
 
     } catch (err) {
-        console.error("Error en la descarga:", err);
+        console.error("Download error:", err);
         event.sender.send('download-progress', { status: 'error', message: err.message });
-        return { success: false, error: 'Error durante la descarga: ' + err.message };
+        return { success: false, error: 'Download error: ' + err.message };
     }
 });
 
@@ -358,6 +332,25 @@ ipcMain.handle('api:checkIfGameOwned', async (event, gameId) => {
     }
 });
 
+ipcMain.handle('api:createCheckoutSession', async (event, gameId) => {
+    try {
+        const response = await fetch(`${API_URL}/Stripe/create-checkout-session`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(gameId)
+        });
+        if (response.ok) return await response.json();
+        return { success: false, error: await response.text() };
+    } catch (err) {
+        return { success: false, error: 'Connection error with the payment gateway.' };
+    }
+});
+
+ipcMain.handle('api:openExternalLink', async (event, url) => {
+    const { shell } = require('electron');
+    await shell.openExternal(url);
+});
+
 ipcMain.handle('api:launchGame', async (event, { gameId, exeName }) => {
     const { spawn } = require('child_process');
     const os = require('os');
@@ -369,22 +362,22 @@ ipcMain.handle('api:launchGame', async (event, { gameId, exeName }) => {
         const exePath = path.join(gameFolder, exeName);
 
         if (!fs.existsSync(exePath)) {
-            return { success: false, error: `No se encuentra el ejecutable: ${exeName}` };
+            return { success: false, error: `Executable not found: ${exeName}` };
         }
 
-        console.log(`Iniciando juego: ${exePath}`);
+        console.log(`Launching game: ${exePath}`);
         
         const gameProcess = spawn(exePath, [], {
-            cwd: gameFolder, // Importante para que el juego encuentre sus assets
+            cwd: gameFolder, // Important so the game can find its assets
             detached: true,
             stdio: 'ignore'
         });
 
-        gameProcess.unref(); // Permite que el launcher siga vivo aunque el juego se cierre
+        gameProcess.unref(); // Allow the launcher to stay open after the game closes
 
         return { success: true };
     } catch (err) {
-        console.error("Error al lanzar el juego:", err);
+        console.error("Error launching game:", err);
         return { success: false, error: err.message };
     }
 });

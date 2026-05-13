@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendSource.Migrations
 {
     [DbContext(typeof(DbContextBa))]
-    [Migration("20260511143913_tables")]
-    partial class tables
+    [Migration("20260513140051_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,12 +92,18 @@ namespace BackendSource.Migrations
                     b.Property<bool>("GameIsPublic")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("GameItsFree")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("GameName")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<float>("Price")
                         .HasColumnType("real");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("GameId");
 
@@ -180,6 +186,9 @@ namespace BackendSource.Migrations
 
                     b.PrimitiveCollection<List<Guid>>("GameId")
                         .HasColumnType("uuid[]");
+
+                    b.Property<bool>("ItsRevoked")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
