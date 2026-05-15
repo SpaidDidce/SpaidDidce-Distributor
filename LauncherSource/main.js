@@ -4,8 +4,6 @@ const fs = require('fs');
 const os = require('os');
 const { pipeline } = require('stream/promises');
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 let store;
 
 function createWindow() {
@@ -242,7 +240,7 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
 
         const contentDisposition = response.headers.get('content-disposition');
         let filename = `${gameId}-latest.zip`;
-        
+
         if (contentDisposition) {
             const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
             const matches = filenameRegex.exec(contentDisposition);
@@ -278,11 +276,11 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
 
         const { Readable } = require('stream');
         let nodeReadable;
-        
+
         try {
             nodeReadable = Readable.fromWeb(response.body);
         } catch (e) {
-            nodeReadable = response.body; 
+            nodeReadable = response.body;
         }
 
         await pipeline(nodeReadable, progressStream, fileStream);
@@ -291,13 +289,13 @@ ipcMain.handle('api:downloadLatestGame', async (event, gameId) => {
             event.sender.send('download-progress', { status: 'extracting', percent: 100 });
             const AdmZip = require('adm-zip');
             const zip = new AdmZip(finalPath);
-            
+
             const extractPath = path.join(downloadDir, gameId);
             if (!fs.existsSync(extractPath)) fs.mkdirSync(extractPath, { recursive: true });
-            
+
             zip.extractAllTo(extractPath, true);
             console.log(`Game extracted to: ${extractPath}`);
-            
+
             fs.unlinkSync(finalPath);
 
             event.sender.send('download-progress', { status: 'completed', percent: 100, path: extractPath });
@@ -355,7 +353,7 @@ ipcMain.handle('api:launchGame', async (event, { gameId, exeName }) => {
     const { spawn } = require('child_process');
     const os = require('os');
     const path = require('path');
-    
+
     try {
         const downloadDir = path.join(os.homedir(), 'LauncherGames');
         const gameFolder = path.join(downloadDir, gameId);
@@ -366,7 +364,7 @@ ipcMain.handle('api:launchGame', async (event, { gameId, exeName }) => {
         }
 
         console.log(`Launching game: ${exePath}`);
-        
+
         const gameProcess = spawn(exePath, [], {
             cwd: gameFolder, // Important so the game can find its assets
             detached: true,

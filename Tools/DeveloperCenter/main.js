@@ -7,8 +7,6 @@ let store;
     store = new Store();
 })();
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 let mainWindow;
 
 function createWindow() {
@@ -92,7 +90,7 @@ ipcMain.handle('api:create-team', async (event, teamName) => {
     try {
         const response = await fetch(`${API_URL}/Programer/createteam`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
@@ -109,7 +107,7 @@ ipcMain.handle('api:create-game', async (event, teamId, gameData) => {
     try {
         const response = await fetch(`${API_URL}/Programer/creategame?TeamId=${teamId}`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
@@ -153,8 +151,8 @@ ipcMain.handle('api:upload-game', async (event, { teamId, gameId, version, fileP
     } catch (err) {
         console.error("Upload error (Axios):", err.message);
         if (err.response) {
-            const errorMsg = typeof err.response.data === 'string' 
-                ? err.response.data 
+            const errorMsg = typeof err.response.data === 'string'
+                ? err.response.data
                 : JSON.stringify(err.response.data);
             return { success: false, error: errorMsg };
         }
@@ -221,7 +219,7 @@ ipcMain.handle('api:delete-team', async (event, teamId) => {
         if (response.ok) {
             return { success: true, message: await response.text() };
         }
-        
+
         const errorText = await response.text();
         console.log(`Backend error (Status ${response.status}): ${errorText}`);
         return { success: false, error: errorText || `Error ${response.status}` };
@@ -236,9 +234,9 @@ ipcMain.handle('api:public-game', async (event, teamId, gameId) => {
     try {
         const response = await fetch(`${API_URL}/Programer/publicgame?TeamId=${teamId}`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json' 
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ GameId: gameId })
         });
