@@ -10,6 +10,6 @@
         public string FileName { get; set; } = string.Empty;
         public string ExeName { get; set; } = string.Empty;
         public bool ItsFree { get; set; } = true;
-        public float Price { get; set; }
+        public decimal Price { get; set; }
     }
 }

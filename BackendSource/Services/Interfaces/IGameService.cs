@@ -1,4 +1,4 @@
-﻿using BackendSource.DataBaseSystem.GamesAndCodes;
+using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DTOs.GamesDtos;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,5 +12,6 @@ namespace BackendSource.Services.APIServices
         public Task<GameVersionTable?> GetLatestVersion(Guid id);
         public Task<string> GetLastVersionDesc(Guid GameId);
         public Task<List<GamesTable>> GetAllPublicGames();
+        public Task<DataBaseSystem.Programers.TeamProgramingDatabse?> GetTeamFromGame(Guid gameId);
     }
 }

@@ -63,6 +63,9 @@
                 <li data-tab="upload-tab">
                     <span class="nav-icon">🚀</span> Publish Version
                 </li>
+                <li data-tab="stripe-tab">
+                    <span class="nav-icon">💳</span> Stripe Connect
+                </li>
             </ul>
 
             <button id="btn-logout" class="logout-btn">
@@ -214,6 +217,50 @@
                     </div>
 
                     <button class="btn-primary" id="btn-start-upload">🚀 Publish to Server</button>
+                </div>
+            </section>
+
+            <!-- ── STRIPE CONNECT TAB ── -->
+            <section id="stripe-tab" class="tab-content">
+                <header class="tab-header">
+                    <div>
+                        <h2>Stripe Connect</h2>
+                        <p class="tab-subtitle">Conecta tu cuenta de Stripe para recibir pagos por tus juegos</p>
+                    </div>
+                </header>
+
+                <div class="form-card">
+                    <h3 class="card-title">Selecciona tu equipo</h3>
+                    <div class="field-group">
+                        <label for="stripe-team-id">Team</label>
+                        <select id="stripe-team-id" class="team-selector-dropdown">
+                            <option value="">Loading teams...</option>
+                        </select>
+                    </div>
+
+                    <!-- Estado actual de la cuenta -->
+                    <div id="stripe-status-container" style="margin: 20px 0; padding: 16px; border-radius: 10px; background: var(--bg-input); display:none;">
+                        <p id="stripe-status-text" style="margin:0; font-size: 14px;">Comprobando estado...</p>
+                    </div>
+
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <button class="btn-primary" id="btn-stripe-connect" style="background: linear-gradient(135deg, #635bff 0%, #4f46e5 100%)" disabled>
+                            💳 Conectar con Stripe
+                        </button>
+                        <button class="btn-secondary" id="btn-stripe-refresh" style="display:none">
+                            🔄 Actualizar estado
+                        </button>
+                    </div>
+
+                    <div style="margin-top:24px; padding:16px; border-radius:10px; background:rgba(99,91,255,0.08); border: 1px solid rgba(99,91,255,0.2);">
+                        <p style="margin:0 0 8px; font-weight:600; color:#a5b4fc;">ℹ️ ¿Cómo funciona?</p>
+                        <ul style="margin:0; padding-left:20px; font-size:13px; color:var(--text-muted); line-height:1.8;">
+                            <li>Cada equipo conecta su propia cuenta de Stripe Express.</li>
+                            <li>Cuando un jugador compra tu juego, el dinero va directamente a tu cuenta.</li>
+                            <li>La plataforma retiene un 15% de comisión automáticamente.</li>
+                            <li>Stripe gestiona todos los impuestos y transferencias por ti.</li>
+                        </ul>
+                    </div>
                 </div>
             </section>
 

@@ -12,7 +12,7 @@ namespace BackendSource.DataBaseSystem.GamesAndCodes
         public string ExeName { get; set; } = string.Empty;
         public bool GameIsPublic { get; set; }
         public bool GameItsFree { get; set; } = false;
-        public float Price { get; set; }
+        public decimal Price { get; set; }
         public List<GameVersionTable> GameVersions { get; set; } = new();
     }
 }

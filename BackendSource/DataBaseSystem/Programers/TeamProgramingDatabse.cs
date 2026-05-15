@@ -1,4 +1,4 @@
-﻿using BackendSource.Enums;
+using BackendSource.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -18,5 +18,7 @@ namespace BackendSource.DataBaseSystem.Programers
         public ERevokedReasonsTeamType? RevokedReason { get; set; }
         public List<UserTable>? UsersInTeam { get; set; }
         public Guid OwnerId { get; set; }
+
+        public string? StripeAccountId { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('devAPI', {
     login: (email, password) => ipcRenderer.invoke('api:login', email, password),
@@ -16,5 +16,9 @@ contextBridge.exposeInMainWorld('devAPI', {
     publicGame: (teamId, gameId) => ipcRenderer.invoke('api:public-game', teamId, gameId),
     uploadGame: (payload) => ipcRenderer.invoke('api:upload-game', payload),
     
+    getStripeStatus: (teamId) => ipcRenderer.invoke('api:stripe-status', teamId),
+    createStripeOnboarding: (teamId) => ipcRenderer.invoke('api:stripe-onboarding', teamId),
+    openExternalLink: (url) => ipcRenderer.invoke('api:open-external', url),
+
     openFile: () => ipcRenderer.invoke('dialog:open-file')
 });

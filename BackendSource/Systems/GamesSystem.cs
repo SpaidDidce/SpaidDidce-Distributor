@@ -1,4 +1,4 @@
-﻿using BackendSource.DataBaseSystem;
+using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DTOs.GamesDtos;
 using BackendSource.Services.APIServices;
@@ -42,7 +42,7 @@ namespace BackendSource.Systems
                 GameVersionId = Guid.NewGuid(),
                 Version = "1.0.0",
                 FileName = dto.FileName,
-                hashFromVersion = dto.sha256,
+                FileHash = dto.sha256,
                 Game = NewGame,
                 CreatedAt = DateTime.UtcNow
             };
@@ -136,6 +136,13 @@ namespace BackendSource.Systems
                 .ToListAsync();
 
             return allGamePublic;
+        }
+
+        public async Task<DataBaseSystem.Programers.TeamProgramingDatabse?> GetTeamFromGame(Guid gameId)
+        {
+            var game = await _context.Games.FirstOrDefaultAsync(p => p.GameId == gameId);
+            if (game == null) return null;
+            return await _context.ProgramersTeams.FirstOrDefaultAsync(t => t.TeamId == game.TeamId);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using BackendSource.DataBaseSystem;
+using BackendSource.DataBaseSystem;
 using BackendSource.DataBaseSystem.GamesAndCodes;
 using BackendSource.DataBaseSystem.Programers;
 using BackendSource.DTOs.GamesDtos;
@@ -40,6 +40,8 @@ namespace BackendSource.Services.CompleteServices
                 GameDescription = dto.GameDescription,
                 ExeName = dto.ExeName,
                 TeamId = teamId,
+                GameItsFree = dto.ItsFree,
+                Price = dto.Price
             };
 
             var newVersion = new GameVersionTable()

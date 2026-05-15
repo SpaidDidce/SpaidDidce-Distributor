@@ -28,6 +28,7 @@ Designed to handle user authentication, game library management, secure large-fi
 - **DRM & Authorization:** Custom Action Filters (`[GameKey]`) ensure only users with a valid license in the database can download specific games.
 - **Secure File Streaming:** Uses `PhysicalFile` to securely stream game files to authenticated clients without exposing internal server paths.
 - **Stripe Payments:** Full Stripe Checkout integration — creates payment sessions and processes webhook events to automatically grant game licenses after a successful purchase.
+- **Global Error Handling:** Implements a global exception handler middleware to catch fatal unhandled exceptions, preventing server crashes and returning clean HTTP 500 JSON responses.
 
 ---
 
@@ -40,17 +41,14 @@ Designed to handle user authentication, game library management, secure large-fi
 
 ---
 
-## 💳 Stripe Integration Setup
+## 💳 Stripe Connect Integration Setup
 
-This project uses Stripe Checkout for one-time game purchases. Follow these steps carefully to enable payments.
+This project uses **Stripe Connect** (Destination Charges) to allow developer teams to receive payouts directly, while the platform retains an automated 15% commission on each sale.
 
-### Step 1 — Create a Stripe Account
-Go to [https://stripe.com](https://stripe.com) and create a free account.
-
-### Step 2 — Get your API Keys
-In the Stripe Dashboard, go to **Developers → API Keys** and copy:
-- **Secret Key** → starts with `sk_test_...` (for testing) or `sk_live_...` (for production)
-- **Publishable Key** (optional for this backend-only flow)
+### Step 1 — Create and Configure a Stripe Platform
+1. Go to [https://dashboard.stripe.com/connect](https://dashboard.stripe.com/connect) and activate Connect for your account.
+2. Complete your Platform Profile (you must define how your platform works, usually as a "Marketplace" selling digital goods).
+3. In **Developers → API Keys**, copy your **Secret Key** (`sk_test_...` or `sk_live_...`).
 
 Paste your **Secret Key** into `BackendSource/appsettings.json`:
 ```json
@@ -60,36 +58,29 @@ Paste your **Secret Key** into `BackendSource/appsettings.json`:
 }
 ```
 
-> ⚠️ **Never commit real API keys to Git.** Use `appsettings.Development.json` (which is in `.gitignore`) or environment variables for local development.
+### Step 2 — Configure the Webhook Endpoint
+Stripe must be able to call your backend when a payment completes or an onboarding finishes. 
 
-### Step 3 — Configure the Webhook Endpoint
-Stripe must be able to call your backend when a payment completes. There are two approaches:
-
-#### Option A — Local Development (Stripe CLI)
+#### Local Development (Stripe CLI)
 1. Install the [Stripe CLI](https://stripe.com/docs/stripe-cli).
-2. Run the following command to forward events to your local backend:
-   ```bash
-   stripe listen --forward-to https://localhost:7045/Stripe/webhook
+2. Run the following command to forward events (both from your platform and connected accounts) to your local backend:
+   ```powershell
+   stripe listen --forward-to https://localhost:7045/Stripe/webhook --forward-connect-to https://localhost:7045/Stripe/webhook
    ```
 3. The CLI will output a webhook signing secret (`whsec_...`). Paste it into `appsettings.json` under `Stripe.WebhookSecret`.
 
-#### Option B — Production (Stripe Dashboard)
-1. In the Stripe Dashboard, go to **Developers → Webhooks → Add endpoint**.
-2. Set the endpoint URL to your public backend URL:
-   ```
-   https://your-domain.com/Stripe/webhook
-   ```
-3. Under **Select events to listen to**, add:
-   - `checkout.session.completed`
-4. After saving, reveal the **Signing secret** (`whsec_...`) and paste it into `appsettings.json`.
-5. **Important:** Make sure the webhook API version matches the `Stripe.net` library version expected. The current library (`Stripe.net 51.x`) expects API version `2026-04-22.dahlia`. Set this version in the webhook endpoint settings.
+### Step 3 — Developer Onboarding
+1. In the **Developer Center**, go to the **Stripe Connect** tab.
+2. Select your team and click **Conectar con Stripe**.
+3. You will be redirected to the Stripe Express onboarding flow. Fill out the required test details to activate your team's connected account.
+4. Back in the Developer Center, the status will show ✅ when the account is ready.
 
 ### Step 4 — Test a Payment
-1. Start the backend and launcher.
-2. Click a paid game in the Store tab.
-3. Click **Buy Now** — a Stripe Checkout page will open in your browser.
-4. Use the test card number `4242 4242 4242 4242` with any future expiry and any CVC.
-5. After payment, Stripe sends a webhook to your backend, which automatically grants the license. The game will then appear in the **Library** tab.
+1. Open the **Launcher** and click a paid game in the Store tab.
+2. Click **Buy Now** — a Stripe Checkout page will open in your browser.
+3. Use the test card number `4242 4242 4242 4242` with any future expiry and any CVC.
+4. After payment, the money is routed to the team's connected account (minus the 15% platform fee).
+5. Stripe sends a webhook to your backend, which automatically grants the license. The game will then appear in the **Library** tab.
 
 ---
 

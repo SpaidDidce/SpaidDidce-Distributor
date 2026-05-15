@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 
 let store;
@@ -264,3 +264,36 @@ ipcMain.handle('api:get-games-for-team', async (event, teamId) => {
 
 ipcMain.handle('auth:get-email', () => store.get('auth.email'));
 ipcMain.handle('auth:logout', () => store.clear());
+
+ipcMain.handle('api:stripe-status', async (event, teamId) => {
+    const token = store.get('auth.accessToken');
+    try {
+        const response = await fetch(`${API_URL}/StripeConnect/status?TeamId=${teamId}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) return await response.json();
+        return { connected: false };
+    } catch (err) {
+        return { connected: false, error: err.message };
+    }
+});
+
+ipcMain.handle('api:stripe-onboarding', async (event, teamId) => {
+    const token = store.get('auth.accessToken');
+    try {
+        const response = await fetch(`${API_URL}/StripeConnect/onboarding?TeamId=${teamId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) return await response.json();
+        return { error: await response.text() };
+    } catch (err) {
+        return { error: err.message };
+    }
+});
+
+ipcMain.handle('api:open-external', async (event, url) => {
+    const { shell } = require('electron');
+    await shell.openExternal(url);
+});
