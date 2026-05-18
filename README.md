@@ -5,8 +5,9 @@
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-8.0-512bd4.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791.svg)
 ![Stripe](https://img.shields.io/badge/Stripe-Payments-635bff.svg)
+![AWS S3](https://img.shields.io/badge/Amazon_S3-Storage-569A31.svg)
 
-A full-stack, enterprise-grade game distribution platform. This project features a custom desktop client built with **Electron** and a highly secure, scalable backend powered by **C# ASP.NET Core** and **PostgreSQL**, with integrated **Stripe** payment processing.
+A full-stack, enterprise-grade game distribution platform. This project features a custom desktop client built with **Electron** and a highly secure, scalable backend powered by **C# ASP.NET Core**, **PostgreSQL**, and **AWS S3** compatible storage, with integrated **Stripe** payment processing.
 
 Designed to handle user authentication, game library management, secure large-file distribution, and real payment flows.
 
@@ -14,7 +15,7 @@ Designed to handle user authentication, game library management, secure large-fi
 
 ## ✨ Key Features
 
-### 🖥️ Frontend (Electron Desktop Client)
+### 🖥️ Player Launcher (Electron Desktop Client)
 - **Modern UI/UX:** Premium user interface built with vanilla HTML/CSS and JavaScript.
 - **Secure Architecture:** Complete separation of concerns using `contextIsolation`. The UI (Renderer Process) never touches sensitive tokens directly.
 - **Encrypted Local Storage:** Uses `electron-store` to securely encrypt and store JWT tokens on the user's filesystem.
@@ -22,11 +23,19 @@ Designed to handle user authentication, game library management, secure large-fi
 - **Automatic Extraction:** Downloaded `.zip` files are automatically extracted into a per-game folder (`~/LauncherGames/<gameId>/`) and the archive is deleted afterward.
 - **Play Button Logic:** The launcher automatically detects if a game is installed locally and shows a **Play** button instead of a **Download** button.
 
+### 🛠️ Developer Center (Electron Desktop Client)
+- **Team Management:** Developers can create and dissolve development teams.
+- **Game Registration:** Teams can register new games (Free or Paid) within their team portfolio.
+- **Large File Uploads:** Dedicated flow utilizing `axios` and `form-data` to handle massive `.zip` uploads directly to the backend.
+- **Stripe Connect Dashboard:** Built-in dashboard allowing developers to seamlessly complete Stripe onboarding to receive payouts for their game sales.
+- **Secure Architecture:** Adheres to the same strict security practices as the player launcher with `contextIsolation` and encrypted token storage.
+
 ### ⚙️ Backend (C# ASP.NET Core API)
 - **Robust Authentication:** Implements JWT (JSON Web Tokens) for secure, stateless user sessions (Access and Refresh tokens).
 - **Relational Database:** Entity Framework Core integration with **PostgreSQL**.
+- **S3 Object Storage:** Seamlessly supports AWS S3 (or MinIO/LocalStack) for robust and scalable game file hosting, with a fallback to local file system storage.
 - **DRM & Authorization:** Custom Action Filters (`[GameKey]`) ensure only users with a valid license in the database can download specific games.
-- **Secure File Streaming:** Uses `PhysicalFile` to securely stream game files to authenticated clients without exposing internal server paths.
+- **Secure File Streaming:** Uses `PhysicalFile` or S3 streams to securely stream game files to authenticated clients without exposing internal server paths.
 - **Stripe Payments:** Full Stripe Checkout integration — creates payment sessions and processes webhook events to automatically grant game licenses after a successful purchase.
 - **Global Error Handling:** Implements a global exception handler middleware to catch fatal unhandled exceptions, preventing server crashes and returning clean HTTP 500 JSON responses.
 
@@ -134,6 +143,7 @@ Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
 - [.NET SDK](https://dotnet.microsoft.com/) (v8.0 or higher)
 - [PostgreSQL](https://www.postgresql.org/) database server running locally
 - [Stripe CLI](https://stripe.com/docs/stripe-cli) *(for webhook testing)*
+- An S3-compatible object storage (e.g., AWS S3, MinIO, or LocalStack) *(Optional, can fallback to local file storage)*
 
 ### 1. Setting up the Backend
 
@@ -189,6 +199,21 @@ Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
    npm start
    ```
 
+### 3. Setting up the Developer Center
+
+1. Open a new terminal and navigate to the developer center folder:
+   ```bash
+   cd Tools/DeveloperCenter
+   ```
+2. Install Node dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Developer Center application:
+   ```bash
+   npm start
+   ```
+
 ---
 
 ## 🔑 Configuration Reference
@@ -199,6 +224,8 @@ Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
 | `appsettings.json` | `Jwt.Key` | JWT signing secret (min. 32 characters, keep secret) |
 | `appsettings.json` | `Stripe.SecretKey` | Stripe API secret key (`sk_test_...` or `sk_live_...`) |
 | `appsettings.json` | `Stripe.WebhookSecret` | Stripe webhook signing secret (`whsec_...`) |
+| `appsettings.json` | `UseS3` | Boolean flag to toggle between S3 storage or local file system |
+| `appsettings.json` | `Aws.*` | Credentials, bucket name, and service URL for the S3-compatible storage |
 | `LauncherSource/main.js` | `API_URL` | URL of the running backend (default: `https://localhost:7045`) |
 | `LauncherSource/main.js` | `encryptionKey` | Key used to encrypt the local token store — change before shipping |
 
