@@ -5,16 +5,19 @@ using BackendSource.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Amazon.S3;
+using Amazon.S3.Model;
 
 namespace BackendSource.Controllers.Programers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ProgramerController(IProgramerService service) : Controller
+    public class ProgramerController(IProgramerService service, IAmazonS3 s3, IConfiguration configuration) : Controller
     {
         private readonly IProgramerService _programerService = service;
-
-
+        private readonly IAmazonS3 _s3 = s3;
+        private readonly IConfiguration _configuration = configuration;
+        
         [Authorize]
         [TeamKey]
         [HttpPost("uploadgame")]
@@ -28,32 +31,62 @@ namespace BackendSource.Controllers.Programers
             var gameFile = Request.Form.Files.FirstOrDefault();
 
             if (gameFile == null || gameFile.Length == 0)
-                return BadRequest("No se ha enviado ningÃºn archivo o el archivo estÃ¡ vacÃ­o.");
+                return BadRequest("No file");
 
             if (!gameFile.FileName.EndsWith(".zip"))
-                return BadRequest("Solo se admiten archivos .zip");
+                return BadRequest("Only .zip allowed");
 
-            var savePath = Path.Combine(Directory.GetCurrentDirectory(), "GameFiles", Gameid.ToString(), gameFile.FileName);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(savePath));
-
-            using (var stream = new FileStream(savePath, FileMode.Create))
+            string fileName = gameFile.FileName;
+            
+            bool useS3 = _configuration.GetValue<bool>("UseS3");
+            if (useS3)
             {
+                var bucketName = "game-files";
+                var key = $"{Gameid}/{fileName}";
+
+                using var stream = gameFile.OpenReadStream();
+
+                await _s3.PutObjectAsync(new PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = key,
+                    InputStream = stream,
+                    ContentType = "application/zip"
+                });
+            }
+            else
+            {
+                var savePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "GameFiles",
+                    Gameid.ToString(),
+                    fileName);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+
+                using var stream = new FileStream(savePath, FileMode.Create);
                 await gameFile.CopyToAsync(stream);
             }
 
-            var updateResult = await _programerService.updateGame(TeamId, new newVersionDto
-            {
-                GameId = Gameid,
-                newVersion = version,
-                nameFile = gameFile.FileName,
-                UpdateDesc = versionDescription
-            });
+            var updateResult = await _programerService.updateGame(
+                TeamId,
+                new newVersionDto
+                {
+                    GameId = Gameid,
+                    newVersion = version,
+                    nameFile = fileName,
+                    UpdateDesc = versionDescription
+                });
 
             if (updateResult == null)
-                return BadRequest("El archivo se subiÃ³ pero no se pudo registrar la versiÃ³n en la DB.");
+                return BadRequest("File stored but DB update failed.");
 
-            return Ok(new { message = "Juego subido y registrado con Ã©xito", fileSize = gameFile.Length });
+            return Ok(new
+            {
+                message = useS3 ? "Stored in S3" : "Stored locally",
+                fileName,
+                size = gameFile.Length
+            });
         }
 
         [Authorize]

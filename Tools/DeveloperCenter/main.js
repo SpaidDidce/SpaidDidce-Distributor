@@ -35,6 +35,7 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
+
 const API_URL = 'https://localhost:7045';
 
 ipcMain.handle('api:login', async (event, email, password) => {

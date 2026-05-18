@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -42,7 +42,6 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
-
 
 const API_URL = 'https://localhost:7045'; // Backend URL (see launchSettings.json)
 

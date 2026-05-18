@@ -51,10 +51,13 @@ namespace BackendSource.Services.CompleteServices
                 Game = newGame,
                 CreatedAt = DateTime.UtcNow
             };
+            
+            var team = await _context.ProgramersTeams.FirstAsync(p => p.TeamId == teamId);
 
             _context.Games.Add(newGame);
             _context.GameVersions.Add(newVersion);
             newGame.GameVersions.Add(newVersion);
+            team.GameId.Add(newGame.GameId);
             await _context.SaveChangesAsync();
             return newGame;
         }

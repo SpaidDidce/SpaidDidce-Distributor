@@ -1,12 +1,24 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const authScreen    = document.getElementById('auth-screen');
-    const mainScreen    = document.getElementById('main-screen');
-    const loginForm     = document.getElementById('login-form');
-    const authError     = document.getElementById('auth-error');
+    const escapeHTML = (str) => {
+        if (str == null) return '';
+        return String(str).replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    };
+    const authScreen = document.getElementById('auth-screen');
+    const mainScreen = document.getElementById('main-screen');
+    const loginForm = document.getElementById('login-form');
+    const authError = document.getElementById('auth-error');
     const userEmailSpan = document.getElementById('user-email');
-    const btnLogout     = document.getElementById('btn-logout');
-    const navLinks      = document.querySelectorAll('.nav-links li');
-    const tabContents   = document.querySelectorAll('.tab-content');
+    const btnLogout = document.getElementById('btn-logout');
+    const navLinks = document.querySelectorAll('.nav-links li');
+    const tabContents = document.querySelectorAll('.tab-content');
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
             const targetTab = link.getAttribute('data-tab');
@@ -16,9 +28,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById(targetTab).classList.add('active');
             if (targetTab === 'stripe-tab') {
                 const stripeSelect = document.getElementById('stripe-team-id');
-                if (stripeSelect && stripeSelect.value) {
-                    stripeSelect.dispatchEvent(new Event('change'));
-                }
+                if (stripeSelect && stripeSelect.value) stripeSelect.dispatchEvent(new Event('change'));
+            } else if (targetTab === 'upload-tab') {
+                const uploadSelect = document.getElementById('upload-team-id');
+                if (uploadSelect && uploadSelect.value) uploadSelect.dispatchEvent(new Event('change'));
+            } else if (targetTab === 'games-tab') {
+                const gameSelect = document.getElementById('game-team-id');
+                if (gameSelect && gameSelect.value) gameSelect.dispatchEvent(new Event('change'));
             }
         });
     });
@@ -33,10 +49,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
-        const pass  = document.getElementById('password').value;
-        const btn   = document.getElementById('btn-login');
+        const pass = document.getElementById('password').value;
+        const btn = document.getElementById('btn-login');
         btn.textContent = 'Signing in...';
-        btn.disabled    = true;
+        btn.disabled = true;
         authError.textContent = '';
         const res = await window.devAPI.login(email, pass);
         if (res.success) {
@@ -45,43 +61,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             authError.textContent = res.error || 'Invalid credentials';
             btn.textContent = 'Access Panel';
-            btn.disabled    = false;
+            btn.disabled = false;
         }
     });
     btnLogout.addEventListener('click', async () => {
         await window.devAPI.logout();
         location.reload();
     });
-    const btnSaveTeam    = document.getElementById('btn-save-team');
+    const btnSaveTeam = document.getElementById('btn-save-team');
     const openCreateTeam = document.getElementById('open-create-team');
     const createTeamCard = document.getElementById('create-team-card');
     openCreateTeam.addEventListener('click', () => {
         const isVisible = createTeamCard.style.display !== 'none';
         createTeamCard.style.display = isVisible ? 'none' : 'block';
-        openCreateTeam.textContent   = isVisible ? '+ New Team' : '✖ Cancel';
+        openCreateTeam.textContent = isVisible ? '+ New Team' : '✖ Cancel';
     });
     btnSaveTeam.addEventListener('click', async () => {
         const name = document.getElementById('new-team-name').value.trim();
         if (!name) return alert('Team name is required');
         btnSaveTeam.textContent = 'Saving...';
-        btnSaveTeam.disabled    = true;
+        btnSaveTeam.disabled = true;
         const res = await window.devAPI.createTeam(name);
         if (res.success) {
             document.getElementById('new-team-name').value = '';
             createTeamCard.style.display = 'none';
-            openCreateTeam.textContent   = '+ New Team';
+            openCreateTeam.textContent = '+ New Team';
             await loadTeams();
         } else {
             alert('Error: ' + res.message);
         }
         btnSaveTeam.textContent = 'Save Team';
-        btnSaveTeam.disabled    = false;
+        btnSaveTeam.disabled = false;
     });
-    const btnCreateGame   = document.getElementById('btn-create-game');
-    const selectGameTeam  = document.getElementById('game-team-id');
-    const teamGamesList   = document.getElementById('team-games-list');
-    const checkIsFree     = document.getElementById('game-is-free');
-    const priceContainer  = document.getElementById('price-container');
+    const btnCreateGame = document.getElementById('btn-create-game');
+    const selectGameTeam = document.getElementById('game-team-id');
+    const teamGamesList = document.getElementById('team-games-list');
+    const checkIsFree = document.getElementById('game-is-free');
+    const priceContainer = document.getElementById('price-container');
     if (checkIsFree) {
         checkIsFree.addEventListener('change', () => {
             priceContainer.style.display = checkIsFree.checked ? 'none' : 'block';
@@ -89,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const loadGamesForTeam = async (teamId) => {
         if (!teamId) { teamGamesList.innerHTML = ''; return; }
-        teamGamesList.innerHTML = '<p class="empty-msg"><span>â³</span> Loading games...</p>';
+        teamGamesList.innerHTML = '<p class="empty-msg"> Loading games...</p>';
         const res = await window.devAPI.getGamesForTeam(teamId);
         if (res.success) {
             const games = res.data;
@@ -100,9 +116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             teamGamesList.innerHTML = games.map(game => `
                 <div class="game-card ${game.gameIsPublic ? 'public' : 'private'}">
                     <div class="game-info">
-                        <strong>${game.gameName}</strong>
+                        <strong>${escapeHTML(game.gameName)}</strong>
                         <span class="game-price-tag ${game.itsFree ? 'free' : ''}">${game.itsFree ? 'FREE' : `€${game.price}`}</span>
-                        <code class="mini-id">${game.gameId}</code>
+                        <code class="mini-id">${escapeHTML(game.gameId)}</code>
                     </div>
                     <div class="team-actions">
                         <button onclick="copyToClipboard('${game.gameId}')" class="btn-icon" title="Copy ID">📋</button>
@@ -124,38 +140,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
     btnCreateGame.addEventListener('click', async () => {
-        const teamId   = selectGameTeam.value;
+        const teamId = selectGameTeam.value;
         const gameData = {
-            GameName:        document.getElementById('game-name').value.trim(),
+            GameName: document.getElementById('game-name').value.trim(),
             GameDescription: document.getElementById('game-desc').value.trim(),
-            ExeName:         document.getElementById('game-exe').value.trim(),
-            ItsFree:         checkIsFree.checked,
-            Price:           parseFloat(document.getElementById('game-price').value || 0)
+            ExeName: document.getElementById('game-exe').value.trim(),
+            ItsFree: checkIsFree.checked,
+            Price: parseFloat(document.getElementById('game-price').value || 0)
         };
         if (!teamId || !gameData.GameName) return alert('Team and game name are required');
         btnCreateGame.textContent = 'Registering...';
-        btnCreateGame.disabled    = true;
+        btnCreateGame.disabled = true;
         const res = await window.devAPI.createGame(teamId, gameData);
         alert(res.message || 'Game processed');
         if (res.success) loadGamesForTeam(teamId);
         btnCreateGame.textContent = 'Register Game';
-        btnCreateGame.disabled    = false;
+        btnCreateGame.disabled = false;
     });
     let selectedFilePath = null;
-    const btnSelectFile       = document.getElementById('btn-select-file');
-    const pathLabel           = document.getElementById('selected-file-path');
-    const btnStartUpload      = document.getElementById('btn-start-upload');
-    const progressContainer   = document.getElementById('upload-progress-container');
-    const progressFill        = document.getElementById('upload-progress-fill');
-    const uploadStatus        = document.getElementById('upload-status');
-    const uploadPercent       = document.getElementById('upload-percent');
-    const fileDropZone        = document.getElementById('file-drop-zone');
+    const btnSelectFile = document.getElementById('btn-select-file');
+    const pathLabel = document.getElementById('selected-file-path');
+    const btnStartUpload = document.getElementById('btn-start-upload');
+    const progressContainer = document.getElementById('upload-progress-container');
+    const progressFill = document.getElementById('upload-progress-fill');
+    const uploadStatus = document.getElementById('upload-status');
+    const uploadPercent = document.getElementById('upload-percent');
+    const fileDropZone = document.getElementById('file-drop-zone');
     btnSelectFile.addEventListener('click', async () => {
         const filePath = await window.devAPI.openFile();
         if (filePath) {
-            selectedFilePath   = filePath;
-            pathLabel.textContent = filePath.split(/[\\/]/).pop(); 
-            pathLabel.title    = filePath;
+            selectedFilePath = filePath;
+            pathLabel.textContent = filePath.split(/[\\/]/).pop();
+            pathLabel.title = filePath;
             fileDropZone.classList.add('drag-over');
             setTimeout(() => fileDropZone.classList.remove('drag-over'), 600);
         }
@@ -173,23 +189,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (res.success) {
             selectUploadGame.innerHTML = res.data.length === 0
                 ? '<option value="">No games in this team</option>'
-                : res.data.map(g => `<option value="${g.gameId}">${g.gameName}</option>`).join('');
+                : res.data.map(g => `<option value="${escapeHTML(g.gameId)}">${escapeHTML(g.gameName)}</option>`).join('');
         } else {
             selectUploadGame.innerHTML = '<option value="">Error loading games</option>';
         }
     });
     btnStartUpload.addEventListener('click', async () => {
-        const teamId  = selectUploadTeam.value;
-        const gameId  = selectUploadGame.value;
+        const teamId = selectUploadTeam.value;
+        const gameId = selectUploadGame.value;
         const version = document.getElementById('upload-version').value.trim();
-        const desc    = document.getElementById('upload-desc').value.trim();
+        const desc = document.getElementById('upload-desc').value.trim();
         if (!selectedFilePath || !teamId || !gameId || !version) {
             return alert('Please fill in all fields: team, game, version, and file.');
         }
         progressContainer.style.display = 'block';
-        btnStartUpload.disabled         = true;
-        uploadStatus.textContent        = 'Uploading...';
-        progressFill.style.width        = '0%';
+        btnStartUpload.disabled = true;
+        uploadStatus.textContent = 'Uploading...';
+        progressFill.style.width = '0%';
         if (uploadPercent) uploadPercent.textContent = '0%';
         const res = await window.devAPI.uploadGame({ teamId, gameId, version, filePath: selectedFilePath, description: desc });
         if (res.success) {
@@ -229,7 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const active = teams.filter(t => !t.itsRevoked);
             dropdown.innerHTML = active.length === 0
                 ? '<option value="">No active teams</option>'
-                : active.map(t => `<option value="${t.teamId}">${t.teamName}</option>`).join('');
+                : active.map(t => `<option value="${escapeHTML(t.teamId)}">${escapeHTML(t.teamName)}</option>`).join('');
         });
         if (!teams || teams.length === 0) {
             teamsList.innerHTML = '<p class="empty-msg"><span>👥</span> You have no teams yet.</p>';
@@ -239,10 +255,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="team-card ${team.itsRevoked ? 'revoked' : ''}">
                 <div class="team-info">
                     <h4>
-                        ${team.teamName}
+                        ${escapeHTML(team.teamName)}
                         ${team.itsRevoked ? '<span class="badge-revoked">Revoked</span>' : ''}
                     </h4>
-                    <span class="team-id">ID: ${team.teamId}</span>
+                    <span class="team-id">ID: ${escapeHTML(team.teamId)}</span>
                     ${team.itsRevoked ? `<p class="revoked-reason">Reason: ${getRevokedReasonText(team.revokedReason)}</p>` : ''}
                 </div>
                 <div class="team-actions">
@@ -280,11 +296,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         await checkAuth();
         await loadTeams();
     }
-    const stripeTeamSelect  = document.getElementById('stripe-team-id');
-    const btnStripeConnect  = document.getElementById('btn-stripe-connect');
-    const btnStripeRefresh  = document.getElementById('btn-stripe-refresh');
-    const stripeStatusBox   = document.getElementById('stripe-status-container');
-    const stripeStatusText  = document.getElementById('stripe-status-text');
+    const stripeTeamSelect = document.getElementById('stripe-team-id');
+    const btnStripeConnect = document.getElementById('btn-stripe-connect');
+    const btnStripeRefresh = document.getElementById('btn-stripe-refresh');
+    const stripeStatusBox = document.getElementById('stripe-status-container');
+    const stripeStatusText = document.getElementById('stripe-status-text');
     async function checkStripeStatus(teamId) {
         stripeStatusBox.style.display = 'block';
         stripeStatusText.textContent = '⏳ Comprobando estado con Stripe...';

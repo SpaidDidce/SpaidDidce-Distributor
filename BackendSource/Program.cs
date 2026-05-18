@@ -5,14 +5,15 @@ using BackendSource.Services.APIServices;
 using BackendSource.Services.CompleteServices;
 using BackendSource.Services.Interfaces;
 using BackendSource.Systems;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Diagnostics.Eventing.Reader;
 using System.Security.Claims;
 using System.Text;
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,8 +29,6 @@ builder.Services.Configure<FormOptions>(x =>
     x.MultipartBodyLengthLimit = int.MaxValue;
     x.MemoryBufferThreshold = int.MaxValue;
 });
-
-
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -49,6 +48,17 @@ builder.Services.AddScoped<IKeyService, KeyService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IProgramerService, ProgramerService>();
 builder.Services.AddScoped<IMeService, MeService>();
+
+builder.Services.AddScoped<IAmazonS3>(_ =>
+{
+    var config = new AmazonS3Config()
+    {
+        ServiceURL = builder.Configuration["Aws:ServiceUrl"],
+        ForcePathStyle = true
+    };
+    
+    return new AmazonS3Client(new BasicAWSCredentials(builder.Configuration["Aws:AccessKey"], builder.Configuration["Aws:SecretKey"]), config);
+});
 
 var dbSettings = builder.Configuration
     .GetSection("DatabaseSettings")
@@ -125,9 +135,9 @@ builder.Services.AddSignalR().AddJsonProtocol(options => { options.PayloadSerial
 builder.Services.AddAuthorization(options =>
 {
 
-    foreach (var Permission in PolicyNames.all)
+    foreach (var permission in PolicyNames.all)
     {
-        options.AddPolicy(Permission, policy => policy.Requirements.Add(new PermissionRequirement(Permission)));
+        options.AddPolicy(permission, policy => policy.Requirements.Add(new PermissionRequirement(permission)));
     }
 });
 
@@ -172,25 +182,48 @@ if (args.Contains("-createEverything"))
     var context = scope.ServiceProvider.GetRequiredService<DbContextBa>();
     await PermissionSeeder.seedAsync(context);
     await RoleSeeder.SeedAsync(context);
-
-
-    var path = Path.GetFullPath("GameFiles");
-
-    if (!Directory.Exists(path))
+    
+    bool useS3 = builder.Configuration.GetValue<bool>("UseS3");
+    if (useS3)
     {
-        Directory.CreateDirectory(path);
+        var s3 = scope.ServiceProvider.GetRequiredService<IAmazonS3>();
+
+        var bucketName = builder.Configuration["Aws:BucketName"];
+        var buckets = await s3.ListBucketsAsync();
+
+        var exists = buckets.Buckets.Any(b => b.BucketName == bucketName);
+        if (!exists)
+        {
+            await s3.PutBucketAsync(new PutBucketRequest
+            {
+                BucketName = bucketName
+            });
+
+            Console.WriteLine($"Bucket Create: {bucketName}");
+        }
+        else
+        {
+            Console.WriteLine($"Bucket already created: {bucketName}");
+        }
     }
-
-    Console.WriteLine($"Ruta completa: {path}");
-
-    var dirs = Directory.GetDirectories(path);
-    foreach (var dir in dirs)
+    else
     {
-        Console.WriteLine(dir);
+        var path = Path.GetFullPath("GameFiles");
+
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        
+        Console.WriteLine($"Ruta completa: {path}");
+
+        var dirs = Directory.GetDirectories(path);
+        foreach (var dir in dirs)
+        {
+            Console.WriteLine(dir);
+        }
     }
 }
-
-
 
 app.UseHttpsRedirection();
 
