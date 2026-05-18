@@ -1,16 +1,4 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const escapeHTML = (str) => {
-        if (str == null) return '';
-        return String(str).replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
-        );
-    };
     const authScreen = document.getElementById('auth-screen');
     const mainScreen = document.getElementById('main-screen');
     const loginForm = document.getElementById('login-form');
@@ -113,19 +101,51 @@ document.addEventListener('DOMContentLoaded', async () => {
                 teamGamesList.innerHTML = '<p class="empty-msg"><span>🎮</span> This team has no registered games yet.</p>';
                 return;
             }
-            teamGamesList.innerHTML = games.map(game => `
-                <div class="game-card ${game.gameIsPublic ? 'public' : 'private'}">
-                    <div class="game-info">
-                        <strong>${escapeHTML(game.gameName)}</strong>
-                        <span class="game-price-tag ${game.itsFree ? 'free' : ''}">${game.itsFree ? 'FREE' : `€${game.price}`}</span>
-                        <code class="mini-id">${escapeHTML(game.gameId)}</code>
-                    </div>
-                    <div class="team-actions">
-                        <button onclick="copyToClipboard('${game.gameId}')" class="btn-icon" title="Copy ID">📋</button>
-                        <button onclick="setGamePublic('${teamId}', '${game.gameId}')" class="btn-icon" title="Toggle Visibility">ðŸŒ</button>
-                    </div>
-                </div>
-            `).join('');
+            teamGamesList.innerHTML = '';
+            games.forEach(game => {
+                const card = document.createElement('div');
+                card.className = `game-card ${game.gameIsPublic ? 'public' : 'private'}`;
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'game-info';
+                
+                const strongName = document.createElement('strong');
+                strongName.textContent = game.gameName;
+                
+                const priceSpan = document.createElement('span');
+                priceSpan.className = `game-price-tag ${game.itsFree ? 'free' : ''}`;
+                priceSpan.textContent = game.itsFree ? 'FREE' : `€${game.price}`;
+                
+                const codeId = document.createElement('code');
+                codeId.className = 'mini-id';
+                codeId.textContent = game.gameId;
+                
+                infoDiv.appendChild(strongName);
+                infoDiv.appendChild(priceSpan);
+                infoDiv.appendChild(codeId);
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'team-actions';
+                
+                const btnCopy = document.createElement('button');
+                btnCopy.className = 'btn-icon';
+                btnCopy.title = 'Copy ID';
+                btnCopy.textContent = '📋';
+                btnCopy.onclick = () => copyToClipboard(game.gameId);
+                
+                const btnToggle = document.createElement('button');
+                btnToggle.className = 'btn-icon';
+                btnToggle.title = 'Toggle Visibility';
+                btnToggle.textContent = '🌐';
+                btnToggle.onclick = () => setGamePublic(teamId, game.gameId);
+                
+                actionsDiv.appendChild(btnCopy);
+                actionsDiv.appendChild(btnToggle);
+                
+                card.appendChild(infoDiv);
+                card.appendChild(actionsDiv);
+                teamGamesList.appendChild(card);
+            });
         }
     };
     if (selectGameTeam) {
@@ -187,9 +207,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectUploadGame.innerHTML = '<option value="">Loading games...</option>';
         const res = await window.devAPI.getGamesForTeam(teamId);
         if (res.success) {
-            selectUploadGame.innerHTML = res.data.length === 0
-                ? '<option value="">No games in this team</option>'
-                : res.data.map(g => `<option value="${escapeHTML(g.gameId)}">${escapeHTML(g.gameName)}</option>`).join('');
+            selectUploadGame.innerHTML = '';
+            if (res.data.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No games in this team';
+                selectUploadGame.appendChild(opt);
+            } else {
+                res.data.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.gameId;
+                    opt.textContent = g.gameName;
+                    selectUploadGame.appendChild(opt);
+                });
+            }
         } else {
             selectUploadGame.innerHTML = '<option value="">Error loading games</option>';
         }
@@ -243,31 +274,86 @@ document.addEventListener('DOMContentLoaded', async () => {
         const teams = res.data;
         document.querySelectorAll('.team-selector-dropdown').forEach(dropdown => {
             const active = teams.filter(t => !t.itsRevoked);
-            dropdown.innerHTML = active.length === 0
-                ? '<option value="">No active teams</option>'
-                : active.map(t => `<option value="${escapeHTML(t.teamId)}">${escapeHTML(t.teamName)}</option>`).join('');
+            dropdown.innerHTML = '';
+            if (active.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No active teams';
+                dropdown.appendChild(opt);
+            } else {
+                active.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.teamId;
+                    opt.textContent = t.teamName;
+                    dropdown.appendChild(opt);
+                });
+            }
         });
         if (!teams || teams.length === 0) {
             teamsList.innerHTML = '<p class="empty-msg"><span>👥</span> You have no teams yet.</p>';
             return;
         }
-        teamsList.innerHTML = teams.map(team => `
-            <div class="team-card ${team.itsRevoked ? 'revoked' : ''}">
-                <div class="team-info">
-                    <h4>
-                        ${escapeHTML(team.teamName)}
-                        ${team.itsRevoked ? '<span class="badge-revoked">Revoked</span>' : ''}
-                    </h4>
-                    <span class="team-id">ID: ${escapeHTML(team.teamId)}</span>
-                    ${team.itsRevoked ? `<p class="revoked-reason">Reason: ${getRevokedReasonText(team.revokedReason)}</p>` : ''}
-                </div>
-                <div class="team-actions">
-                    <button onclick="copyToClipboard('${team.teamId}')" title="Copy ID" class="btn-icon">📋</button>
-                    ${!team.itsRevoked ? `<button onclick="changeName('${team.teamId}')" title="Rename" class="btn-icon">âœï¸</button>` : ''}
-                    <button onclick="confirmDeleteTeam('${team.teamId}')" title="Dissolve Team" class="btn-icon btn-delete">ðŸ—‘ï¸</button>
-                </div>
-            </div>
-        `).join('');
+        teamsList.innerHTML = '';
+        teams.forEach(team => {
+            const card = document.createElement('div');
+            card.className = `team-card ${team.itsRevoked ? 'revoked' : ''}`;
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'team-info';
+            
+            const h4 = document.createElement('h4');
+            h4.textContent = team.teamName + ' ';
+            if (team.itsRevoked) {
+                const badge = document.createElement('span');
+                badge.className = 'badge-revoked';
+                badge.textContent = 'Revoked';
+                h4.appendChild(badge);
+            }
+            
+            const spanId = document.createElement('span');
+            spanId.className = 'team-id';
+            spanId.textContent = 'ID: ' + team.teamId;
+            
+            infoDiv.appendChild(h4);
+            infoDiv.appendChild(spanId);
+            
+            if (team.itsRevoked) {
+                const pReason = document.createElement('p');
+                pReason.className = 'revoked-reason';
+                pReason.textContent = 'Reason: ' + getRevokedReasonText(team.revokedReason);
+                infoDiv.appendChild(pReason);
+            }
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'team-actions';
+            
+            const btnCopy = document.createElement('button');
+            btnCopy.className = 'btn-icon';
+            btnCopy.title = 'Copy ID';
+            btnCopy.textContent = '📋';
+            btnCopy.onclick = () => copyToClipboard(team.teamId);
+            actionsDiv.appendChild(btnCopy);
+            
+            if (!team.itsRevoked) {
+                const btnRename = document.createElement('button');
+                btnRename.className = 'btn-icon';
+                btnRename.title = 'Rename';
+                btnRename.textContent = '✏️';
+                btnRename.onclick = () => changeName(team.teamId);
+                actionsDiv.appendChild(btnRename);
+            }
+            
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn-icon btn-delete';
+            btnDelete.title = 'Dissolve Team';
+            btnDelete.textContent = '🗑️';
+            btnDelete.onclick = () => confirmDeleteTeam(team.teamId);
+            actionsDiv.appendChild(btnDelete);
+            
+            card.appendChild(infoDiv);
+            card.appendChild(actionsDiv);
+            teamsList.appendChild(card);
+        });
     };
     window.confirmDeleteTeam = async (id) => {
         if (confirm('Are you sure you want to dissolve this team? Associated games will be unpublished.')) {
