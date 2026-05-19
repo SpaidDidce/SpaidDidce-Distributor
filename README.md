@@ -4,6 +4,7 @@
 ![Electron](https://img.shields.io/badge/Electron-Desktop-47848f.svg)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-8.0-512bd4.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791.svg)
+![Docker](https://img.shields.io/badge/Docker-Containers-2496ED.svg)
 ![Stripe](https://img.shields.io/badge/Stripe-Payments-635bff.svg)
 ![AWS S3](https://img.shields.io/badge/Amazon_S3-Storage-569A31.svg)
 
@@ -37,6 +38,7 @@ Designed to handle user authentication, game library management, secure large-fi
 - **DRM & Authorization:** Custom Action Filters (`[GameKey]`) ensure only users with a valid license in the database can download specific games.
 - **Secure File Streaming:** Uses `PhysicalFile` or S3 streams to securely stream game files to authenticated clients without exposing internal server paths.
 - **Stripe Payments:** Full Stripe Checkout integration — creates payment sessions and processes webhook events to automatically grant game licenses after a successful purchase.
+- **Email Notifications:** Built-in SMTP support for sending emails (e.g., account verification, notifications), configured for seamless local testing with MailHog.
 - **Global Error Handling:** Implements a global exception handler middleware to catch fatal unhandled exceptions, preventing server crashes and returning clean HTTP 500 JSON responses.
 
 ---
@@ -141,9 +143,15 @@ Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v16 or higher)
 - [.NET SDK](https://dotnet.microsoft.com/) (v8.0 or higher)
-- [PostgreSQL](https://www.postgresql.org/) database server running locally
+- [Docker](https://www.docker.com/) *(Used to run PostgreSQL, Floci, and MailHog locally)*
 - [Stripe CLI](https://stripe.com/docs/stripe-cli) *(for webhook testing)*
 - An S3-compatible object storage (e.g., AWS S3, MinIO, or LocalStack) *(Optional, can fallback to local file storage)*
+
+### 🐳 Docker Infrastructure
+This project utilizes Docker to simplify the setup of essential backend services. The following technologies are containerized:
+- **PostgreSQL:** Primary relational database for the platform.
+- **Floci:** Local s3 storage emulator.
+- **MailHog:** Used for capturing and testing email notifications sent by the backend during development.
 
 ### 1. Setting up the Backend
 
@@ -153,25 +161,32 @@ Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
    ```
 2. Open `appsettings.json` and fill in all required values:
    ```json
-   {
-     "DatabaseSettings": {
-       "Server": "127.0.0.1",
-       "Port": 5432,
-       "Database": "your_db_name",
-       "User": "your_db_user",
-       "Password": "your_db_password"
-     },
-     "Jwt": {
-       "Key": "a-long-random-secret-string-min-32-chars",
-       "Issuer": "YourAppName",
-       "Audience": "YourAppClient",
-       "ExpiresInMinutes": 15
-     },
-     "Stripe": {
-       "SecretKey": "sk_test_YOUR_STRIPE_SECRET_KEY",
-       "WebhookSecret": "whsec_YOUR_STRIPE_WEBHOOK_SECRET"
-     }
-   }
+    {
+      "DatabaseSettings": {
+        "Server": "127.0.0.1",
+        "Port": 5432,
+        "Database": "your_db_name",
+        "User": "your_db_user",
+        "Password": "your_db_password"
+      },
+      "Jwt": {
+        "Key": "a-long-random-secret-string-min-32-chars",
+        "Issuer": "YourAppName",
+        "Audience": "YourAppClient",
+        "ExpiresInMinutes": 15
+      },
+      "Stripe": {
+        "SecretKey": "sk_test_YOUR_STRIPE_SECRET_KEY",
+        "WebhookSecret": "whsec_YOUR_STRIPE_WEBHOOK_SECRET"
+      },
+      "Smtp": {
+        "Host": "127.0.0.1",
+        "Port": 1025,
+        "Username": "your_smtp_user",
+        "Password": "your_smtp_password",
+        "From": "noreply@spaiddidce.com"
+      }
+    }
    ```
 3. Run the application:
    ```bash
@@ -224,6 +239,7 @@ Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
 | `appsettings.json` | `Jwt.Key` | JWT signing secret (min. 32 characters, keep secret) |
 | `appsettings.json` | `Stripe.SecretKey` | Stripe API secret key (`sk_test_...` or `sk_live_...`) |
 | `appsettings.json` | `Stripe.WebhookSecret` | Stripe webhook signing secret (`whsec_...`) |
+| `appsettings.json` | `Smtp.*` | SMTP server configuration for sending emails (e.g., MailHog) |
 | `appsettings.json` | `UseS3` | Boolean flag to toggle between S3 storage or local file system |
 | `appsettings.json` | `Aws.*` | Credentials, bucket name, and service URL for the S3-compatible storage |
 | `LauncherSource/main.js` | `API_URL` | URL of the running backend (default: `https://localhost:7045`) |
