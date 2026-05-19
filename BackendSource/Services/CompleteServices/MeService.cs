@@ -51,5 +51,14 @@ namespace BackendSource.Services.CompleteServices
         {
             return await _context.Licences.AnyAsync(p => p.PlayerId == userId && p.GameId == GameId);
         }
+
+        public string GetUser(Guid userId)
+        {
+            var user = _context.Users.FirstOrDefault(p => p.Id == userId);
+            if (user == null)
+                return "User not found";
+
+            return user.Email;
+        }
     }
 }

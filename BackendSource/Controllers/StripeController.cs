@@ -8,17 +8,14 @@ namespace BackendSource.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class StripeController : Controller
+    public class StripeController(IGameService gameService, IMeService meService, IConfiguration configuration, IEmailService emailService) : Controller
     {
-        private readonly IGameService _gameService;
-        private readonly IMeService _meService;
-        private readonly IConfiguration _configuration;
-        public StripeController(IGameService gameService, IMeService meService, IConfiguration configuration)
-        {
-            _gameService = gameService;
-            _meService = meService;
-            _configuration = configuration;
-        }
+        private readonly IGameService _gameService = gameService;
+        private readonly IMeService _meService = meService;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly IEmailService _emailService = emailService;
+        
+        
         [HttpPost("create-checkout-session")]
         public async Task<IActionResult> CreateCheckoutSession([FromBody] Guid gameId)
         {
@@ -29,7 +26,7 @@ namespace BackendSource.Controllers
             var domain = "https://localhost:7045";
             var team = await _gameService.GetTeamFromGame(gameId);
             if (team == null || string.IsNullOrEmpty(team.StripeAccountId))
-                return BadRequest("El equipo del juego no tiene Stripe Connect configurado.");
+                return BadRequest("The game team does not have Stripe Connect configured.");
             const double platformFeePercent = 0.15;
             var totalAmount = (long)(game.Price * 100);
             var platformFee = (long)(totalAmount * platformFeePercent);
@@ -78,16 +75,16 @@ namespace BackendSource.Controllers
         public async Task<IActionResult> Webhook()
         {
             var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
-            Console.WriteLine("[Stripe] Webhook recibido");
+            Console.WriteLine("[Stripe] Webhook recibed");
             try
             {
                 var connectAccountId = Request.Headers["Stripe-Account"].FirstOrDefault();
-                Console.WriteLine($"[Stripe] Cuenta conectada: {connectAccountId ?? "plataforma"}");
+                Console.WriteLine($"[Stripe] Account connected: {connectAccountId ?? "plataforma"}");
                 var stripeEvent = EventUtility.ConstructEvent(json,
                     Request.Headers["Stripe-Signature"],
                     _configuration.GetSection("Stripe")["WebhookSecret"],
                     throwOnApiVersionMismatch: false);
-                Console.WriteLine($"[Stripe] Evento: {stripeEvent.Type}");
+                Console.WriteLine($"[Stripe] Event: {stripeEvent.Type}");
                 if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
                 {
                     var session = stripeEvent.Data.Object as Session;
@@ -95,10 +92,15 @@ namespace BackendSource.Controllers
                     {
                         var userId = Guid.Parse(session.ClientReferenceId);
                         var gameId = Guid.Parse(session.Metadata["GameId"]);
-                        Console.WriteLine($"[Stripe] Otorgando licencia - Usuario: {userId}, Juego: {gameId}");
+                        Console.WriteLine($"[Stripe] Granting license - User: {userId}, Game: {gameId}");
                         var result = await _meService.BuyGame(userId, gameId);
-                        if (result) Console.WriteLine("[Stripe] ✅ Licencia otorgada con éxito.");
-                        else Console.WriteLine("[Stripe] ⚠️ No se pudo otorgar la licencia (¿ya la tiene?).");
+                        if (result)
+                        {
+                            Console.WriteLine("[Stripe] ✅ License successfully granted.");
+                            var user = _meService.GetUser(userId);
+                            await _emailService.SendEmailAsync(user, "Buy game", $"You succesfully buy a {_gameService.GetGameFromId(gameId).Result.GameName}");
+                        }
+                        else Console.WriteLine("[Stripe] ⚠️ The license could not be granted (do you already have it?).");
                     }
                 }
                 return Ok();

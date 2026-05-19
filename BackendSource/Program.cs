@@ -14,6 +14,7 @@ using System.Text;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using BackendSource.SMTPSystem;
 using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +49,8 @@ builder.Services.AddScoped<IKeyService, KeyService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IProgramerService, ProgramerService>();
 builder.Services.AddScoped<IMeService, MeService>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<IAmazonS3>(_ =>
 {
@@ -120,6 +123,8 @@ if (string.IsNullOrWhiteSpace(frontedUrl))
 
 frontedUrl = frontedUrl.TrimEnd('/');
 
+
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>

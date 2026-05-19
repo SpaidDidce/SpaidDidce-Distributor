@@ -1,5 +1,7 @@
 ﻿using BackendSource.Services.APIServices;
 using BackendSource.Services.CompleteServices;
+using BackendSource.Services.Interfaces;
+using BackendSource.SMTPSystem;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,11 +9,11 @@ namespace BackendSource.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class AuthController(IAuthService authService) : Controller
+    public class AuthController(IAuthService authService, IEmailService emailService) : Controller
     {
         private readonly IAuthService _authService = authService;
-
-
+        private readonly IEmailService _emailService = emailService;
+        
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] DTOs.RegisterDto dto)
         {
@@ -20,7 +22,8 @@ namespace BackendSource.Controllers
             {
                 return BadRequest(result.ErrorMessage);
             }
-
+            
+            await _emailService.SendEmailAsync(dto.Email, "Registered Successfully", "Hello, you successfully registered!");
             return Ok(new
             {
                 accessToken = result.AccessToken,
@@ -36,6 +39,8 @@ namespace BackendSource.Controllers
             {
                 return BadRequest("Something is wrong");
             }
+            
+            await _emailService.SendEmailAsync(dto.Email, "Logged In", "Hello, you successfully logged in!");
 
             return Ok(new
             {

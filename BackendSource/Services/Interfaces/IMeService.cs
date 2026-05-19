@@ -8,5 +8,6 @@ namespace BackendSource.Services.Interfaces
         public Task<GetMyLibraryTask> GetLibrary(Guid UserId);
         public Task<bool> BuyGame(Guid userId, Guid GameId);
         public Task<bool> GetIfGameIHaveit(Guid userId, Guid GameId);
+        string GetUser(Guid userId);
     }
 }
