@@ -7,6 +7,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Containers-2496ED.svg)
 ![Stripe](https://img.shields.io/badge/Stripe-Payments-635bff.svg)
 ![AWS S3](https://img.shields.io/badge/Amazon_S3-Storage-569A31.svg)
+![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF.svg?logo=github-actions&logoColor=white)
 
 A full-stack, enterprise-grade game distribution platform. This project features a custom desktop client built with **Electron** and a highly secure, scalable backend powered by **C# ASP.NET Core**, **PostgreSQL**, and **AWS S3** compatible storage, with integrated **Stripe** payment processing.
 
@@ -40,6 +41,7 @@ Designed to handle user authentication, game library management, secure large-fi
 - **Stripe Payments:** Full Stripe Checkout integration — creates payment sessions and processes webhook events to automatically grant game licenses after a successful purchase.
 - **Email Notifications:** Built-in SMTP support for sending emails (e.g., account verification, notifications), configured for seamless local testing with MailHog.
 - **Global Error Handling:** Implements a global exception handler middleware to catch fatal unhandled exceptions, preventing server crashes and returning clean HTTP 500 JSON responses.
+- **Automated Testing & CI:** Backend logic is covered by unit tests via `xUnit` and `Moq`, with GitHub Actions providing continuous integration.
 
 ---
 
@@ -135,6 +137,20 @@ Endpoints restricted to developers and teams using the `[TeamKey]` DRM filter.
 | `POST` | `/programer/createteam` | TBD | `200 OK` | Creates a new developer team. |
 | `POST` | `/programer/creategame` | `Guid TeamId` + `[TeamKey(OnlyOwner)]` | `200 OK` | Registers a new game. Only the Team Owner can do this. |
 | `POST` | `/programer/uploadgame` | `multipart/form-data`: `TeamId`, `GameId`, `gameFile`, `versionDescription` | `200 OK` `{ message, fileSize }` | Uploads a new `.zip` build for a game. Any team member can do this. |
+
+---
+
+## 🧪 Testing & CI/CD
+
+The platform maintains code quality and reliability through automated testing and continuous integration:
+
+- **Unit Testing:** The backend business logic is covered by unit tests using **xUnit** and **Moq**.
+- **Continuous Integration (CI):** A GitHub Actions workflow (`.github/workflows/dotnet.yml`) is triggered on every push and pull request to the `main` branch. It automatically restores dependencies, builds the backend, and runs all test suites.
+
+To run the backend tests locally, use the following command:
+```bash
+dotnet test Tests/TestBackend
+```
 
 ---
 
