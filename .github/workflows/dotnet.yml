@@ -24,4 +24,4 @@ jobs:
       run: dotnet build BackendSource --no-restore
 
     - name: Test
-      run: dotnet test Tests --no-build --verbosity normal
+      run: dotnet test Tests/TestBackend --no-build --verbosity normal
