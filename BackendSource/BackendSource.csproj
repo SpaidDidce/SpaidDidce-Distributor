@@ -31,4 +31,8 @@
     <PackageReference Include="Stripe.net" Version="51.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="TestBackend\obj\project.packagespec.json" />
+  </ItemGroup>
+
 </Project>

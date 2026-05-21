@@ -1,4 +1,5 @@
 using BackendSource.DTOs;
+using BackendSource.Services.APIServices;
 using BackendSource.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,15 +7,15 @@ namespace BackendSource.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class TestController(IEmailService emailServices) : Controller
+public class TestController(IEmailService emailService) : Controller
 {
-    private readonly IEmailService _emailService = emailServices;
-    
+    private readonly IEmailService _emailService = emailService;
+
     [HttpPost("mailtest")]
-    public async Task<IActionResult> EmailTest([FromBody] EmailRequest request)
+    public async Task<IActionResult> EmailTest([FromBody] EmailRequest emailRequest)
     {
-        Console.WriteLine("Testing email");
-        await _emailService.SendEmailAsync(request.Email, "test", "test");
+        await _emailService.SendEmailAsync(emailRequest.Email, "test", "test");
         return Ok();
     }
+    
 }
